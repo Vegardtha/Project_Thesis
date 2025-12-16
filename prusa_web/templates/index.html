@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Prusa CPR Controller</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e9ecef;
+  --border-color: #dee2e6;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --text-tertiary: #adb5bd;
+  --success: #28a745;
+  --danger: #dc3545;
+  --primary: #007bff;
+}
+
+* {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+.main-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 1.25rem 0;
+  margin-bottom: 1.5rem;
+}
+
+.main-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  margin-bottom: 1.25rem;
+  color: var(--text-primary);
+}
+
+.card-header {
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.card-body {
+  padding: 1.25rem;
+}
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}
+
+.status-connected {
+  background: var(--success);
+}
+
+.status-disconnected {
+  background: var(--text-tertiary);
+}
+
+.force-display {
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  padding: 1.5rem 1rem;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  margin-top: 1rem;
+  border: 1px solid var(--border-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.form-label {
+  color: var(--text-secondary) !important;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-bottom: 0.375rem;
+}
+
+.form-control, .form-select {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.form-control:focus, .form-select:focus {
+  background: var(--bg-secondary);
+  border-color: var(--primary);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+}
+
+.btn {
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: 1px solid transparent;
+}
+
+.btn-success {
+  background: var(--success);
+  color: white;
+  border-color: var(--success);
+}
+
+.btn-success:hover {
+  background: #218838;
+  border-color: #1e7e34;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: #c82333;
+  border-color: #bd2130;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+  border-color: #545b62;
+}
+
+.btn-outline-light {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-outline-light:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.logbox {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  white-space: pre-wrap;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.port-info {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+
+.motion-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.section-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 1.25rem 0;
+}
+
+.text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.small {
+  color: var(--text-tertiary) !important;
+}
+
+.logbox::-webkit-scrollbar {
+  width: 8px;
+}
+
+.logbox::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.logbox::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.logbox::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+</style>
+</head>
+<body>
+<div class="main-header">
+  <div class="container-fluid">
+    <h1>Prusa CPR Controller</h1>
+  </div>
+</div>
+
+<div class="container-fluid px-4 pb-4">
+  <div class="row g-4">
+    <!-- Left Column: Connections & Force Monitor -->
+    <div class="col-xl-3 col-lg-4">
+      <!-- Printer Connection -->
+      <div class="card">
+        <div class="card-header">Printer Connection</div>
+        <div class="card-body">
+          <div class="status-indicator" id="printerStatus">
+            <span class="status-dot status-disconnected"></span>
+            <span id="printerStatusText">Disconnected</span>
+          </div>
+          <div class="port-info">
+            Port: <span id="printerPort">(auto)</span>
+          </div>
+          <label class="form-label">Baud Rate</label>
+          <select id="printerBaud" class="form-select form-select-sm mb-3">
+            <option value="115200" selected>115200</option>
+            <option value="250000">250000</option>
+          </select>
+          <div class="d-grid gap-2">
+            <button id="btnPrinterConnect" class="btn btn-sm btn-success">Connect Printer</button>
+            <button id="btnPrinterDisconnect" class="btn btn-sm btn-secondary" style="display:none">Disconnect</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LoadCell Connection -->
+      <div class="card">
+        <div class="card-header">Load Cell Sensor</div>
+        <div class="card-body">
+          <div class="status-indicator" id="loadcellStatus">
+            <span class="status-dot status-disconnected"></span>
+            <span id="loadcellStatusText">Disconnected</span>
+          </div>
+          <div class="port-info">
+            Port: <span id="loadcellPort">(auto)</span>
+          </div>
+          <label class="form-label">Baud Rate</label>
+          <select id="loadcellBaud" class="form-select form-select-sm mb-3">
+            <option value="9600" selected>9600</option>
+            <option value="115200">115200</option>
+          </select>
+          <div class="d-grid gap-2 mb-3">
+            <button id="btnLoadcellConnect" class="btn btn-sm btn-success">Connect LoadCell</button>
+            <button id="btnLoadcellDisconnect" class="btn btn-sm btn-secondary" style="display:none">Disconnect</button>
+            <button id="btnTare" class="btn btn-sm btn-outline-light">Tare (Zero)</button>
+          </div>
+          
+          <div class="force-display" id="forceDisplay">0.0 kg</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Middle Column: CPR Control & Motion -->
+    <div class="col-xl-5 col-lg-4">
+      <!-- Multi-Round CPR Cycles -->
+      <div class="card">
+        <div class="card-header">CPR Cycle Configuration</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Target Force (kg)</label>
+              <input id="multiRoundForce" type="number" class="form-control" step="0.1" value="2.0" min="0.1" max="10">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Number of Rounds</label>
+              <input id="numRounds" type="number" class="form-control" step="1" value="5" min="1" max="100">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Pause Between Rounds (sec)</label>
+              <input id="pauseBetweenRounds" type="number" class="form-control" step="0.1" value="0.5" min="0" max="5">
+            </div>
+            <div class="col-12">
+              <div class="section-divider"></div>
+              <button id="btnMultiRoundPush" class="btn btn-success w-100">Start Multi-Round Push</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Motion Control -->
+      <div class="card">
+        <div class="card-header">Motion Control</div>
+        <div class="card-body">
+          <div class="d-grid mb-3">
+            <button id="btnHome" class="btn btn-sm btn-outline-light">Home All Axes (G28)</button>
+          </div>
+          <label class="form-label mb-2">Manual Jog Controls</label>
+          <div class="motion-grid">
+            <button class="btn btn-outline-light" data-jog="X,-1">X−</button>
+            <button class="btn btn-outline-light" data-jog="X,1">X+</button>
+            <button class="btn btn-outline-light" data-jog="Z,1">Z+</button>
+            <button class="btn btn-outline-light" data-jog="Y,-1">Y−</button>
+            <button class="btn btn-outline-light" data-jog="Y,1">Y+</button>
+            <button class="btn btn-outline-light" data-jog="Z,-1">Z−</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Activity Log -->
+    <div class="col-xl-4 col-lg-4">
+      <div class="card" style="height: calc(100vh - 180px);">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Activity Log</span>
+          <button id="btnRefreshLog" class="btn btn-outline-light btn-sm">Refresh</button>
+        </div>
+        <div class="card-body p-0" style="overflow: hidden;">
+          <pre id="log" class="logbox p-3 m-0" style="height:100%;overflow-y:auto;border-radius:0;border:none;"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Utility functions
+function showToast(msg, type='info'){
+  const color = type==='error' ? 'danger' : type==='success' ? 'success' : 'info';
+  alert(msg); // Simple for now, could use Bootstrap toast
+}
+
+async function postJSON(url, data){
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data || {})
+  });
+  const j = await r.json();
+  if (!r.ok || !j.ok) throw new Error(j.error || ('HTTP ' + r.status));
+  return j;
+}
+
+async function getJSON(url){
+  const r = await fetch(url);
+  return await r.json();
+}
+
+// Status management
+function setPrinterConnected(connected, port='(auto)'){
+  const dot = document.querySelector('#printerStatus .status-dot');
+  const txt = document.getElementById('printerStatusText');
+  const portEl = document.getElementById('printerPort');
+  
+  document.getElementById('btnPrinterConnect').style.display = connected ? 'none' : 'block';
+  document.getElementById('btnPrinterDisconnect').style.display = connected ? 'block' : 'none';
+  dot.className = 'status-dot ' + (connected ? 'status-connected' : 'status-disconnected');
+  txt.textContent = connected ? 'Connected' : 'Disconnected';
+  portEl.textContent = port;
+}
+
+function setLoadcellConnected(connected, port='(auto)'){
+  const dot = document.querySelector('#loadcellStatus .status-dot');
+  const txt = document.getElementById('loadcellStatusText');
+  const portEl = document.getElementById('loadcellPort');
+  
+  document.getElementById('btnLoadcellConnect').style.display = connected ? 'none' : 'block';
+  document.getElementById('btnLoadcellDisconnect').style.display = connected ? 'block' : 'none';
+  dot.className = 'status-dot ' + (connected ? 'status-connected' : 'status-disconnected');
+  txt.textContent = connected ? 'Connected' : 'Disconnected';
+  portEl.textContent = port;
+}
+
+// Printer connection
+document.getElementById('btnPrinterConnect').onclick = async () => {
+  const baud = document.getElementById('printerBaud').value;
+  try {
+    const result = await postJSON('/api/connect', {baud});
+    setPrinterConnected(true, result.port);
+    showToast('Printer connected @ ' + baud, 'success');
+  } catch(e) {
+    showToast('Printer error: ' + e.message, 'error');
+  }
+};
+
+document.getElementById('btnPrinterDisconnect').onclick = async () => {
+  try {
+    await postJSON('/api/disconnect');
+    setPrinterConnected(false);
+    showToast('Printer disconnected', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+};
+
+// LoadCell connection
+document.getElementById('btnLoadcellConnect').onclick = async () => {
+  const baud = document.getElementById('loadcellBaud').value;
+  try {
+    const result = await postJSON('/api/loadcell/connect', {baud});
+    setLoadcellConnected(true, result.port);
+    showToast('LoadCell connected @ ' + baud, 'success');
+    startForceMonitoring();
+  } catch(e) {
+    showToast('LoadCell error: ' + e.message, 'error');
+  }
+};
+
+document.getElementById('btnLoadcellDisconnect').onclick = async () => {
+  try {
+    await postJSON('/api/loadcell/disconnect');
+    setLoadcellConnected(false);
+    stopForceMonitoring();
+    showToast('LoadCell disconnected', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+};
+
+document.getElementById('btnTare').onclick = async () => {
+  try {
+    await postJSON('/api/loadcell/tare');
+    showToast('Load cell tared', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+};
+
+// Force monitoring
+let forceMonitorInterval = null;
+
+function startForceMonitoring(){
+  if (forceMonitorInterval) return;
+  forceMonitorInterval = setInterval(async () => {
+    try {
+      const result = await getJSON('/api/loadcell/weight');
+      if (result.ok) {
+        document.getElementById('forceDisplay').textContent = result.weight_kg.toFixed(2) + ' kg';
+      }
+    } catch(e) {
+      // Ignore errors during monitoring
+    }
+  }, 500); // Update every 500ms
+}
+
+function stopForceMonitoring(){
+  if (forceMonitorInterval) {
+    clearInterval(forceMonitorInterval);
+    forceMonitorInterval = null;
+  }
+  document.getElementById('forceDisplay').textContent = '0.0 kg';
+}
+
+// Multi-round force control
+document.getElementById('btnMultiRoundPush').onclick = async () => {
+  const target_kg = parseFloat(document.getElementById('multiRoundForce').value);
+  const num_rounds = parseInt(document.getElementById('numRounds').value);
+  const pause_between_rounds = parseFloat(document.getElementById('pauseBetweenRounds').value);
+  const max_depth_mm = 150; // Safety limit
+  
+  if (num_rounds < 1 || num_rounds > 100) {
+    showToast('Number of rounds must be between 1 and 100', 'error');
+    return;
+  }
+  
+  const btn = document.getElementById('btnMultiRoundPush');
+  
+  try {
+    // Disable button during operation
+    btn.disabled = true;
+    btn.textContent = 'Running...';
+    
+    const result = await postJSON('/api/force/push_multiple', {
+      target_kg, 
+      num_rounds, 
+      max_depth_mm,
+      pause_between_rounds
+    });
+    
+    if (result.success) {
+      showToast(`Successfully completed ${result.total_rounds} rounds!`, 'success');
+    } else {
+      showToast(`Completed ${result.successful_rounds}/${result.total_rounds} rounds`, 'error');
+    }
+    
+    // Show detailed results in console
+    console.table(result.round_results);
+    
+  } catch(e) {
+    showToast('Multi-round push error: ' + e.message, 'error');
+  } finally {
+    // Re-enable button
+    btn.disabled = false;
+    btn.textContent = 'Start Multi-Round Push';
+  }
+};
+
+// Basic motion control
+document.getElementById('btnHome').onclick = () => 
+  postJSON('/api/home').catch(e => showToast(e.message, 'error'));
+
+document.querySelectorAll('[data-jog]').forEach(b => b.onclick = () => {
+  const [axis, dir] = b.dataset.jog.split(',');
+  postJSON('/api/jog', {
+    axis,
+    dir
+  }).catch(e => showToast(e.message, 'error'));
+});
+
+// Emergency stop
+document.getElementById('btnEstop').onclick = async () => {
+  if (confirm('EMERGENCY STOP - Are you sure?')) {
+    try {
+      await postJSON('/api/estop');
+      showToast('EMERGENCY STOP activated!', 'error');
+    } catch(e) {
+      showToast('E-Stop error: ' + e.message, 'error');
+    }
+  }
+};
+
+// Log management
+document.getElementById('btnRefreshLog').onclick = async () => {
+  try {
+    const result = await getJSON('/api/logs');
+    document.getElementById('log').textContent = (result.logs || []).join('\n');
+    // Auto-scroll to bottom
+    document.getElementById('log').scrollTop = document.getElementById('log').scrollHeight;
+  } catch(e) {
+    showToast('Log error: ' + e.message, 'error');
+  }
+};
+
+// Auto-refresh log
+setInterval(() => {
+  document.getElementById('btnRefreshLog').click();
+}, 2000);
+
+// Initial status check
+async function refreshStatus(){
+  try {
+    const printerStatus = await getJSON('/api/status');
+    setPrinterConnected(printerStatus.connected, printerStatus.port);
+  } catch(e) {
+    console.error('Status check failed:', e);
+  }
+}
+
+// Initialize
+refreshStatus();
+document.getElementById('btnRefreshLog').click();
+</script>
+</body>
+</html>
