@@ -1,7 +1,0 @@
-# Ignore generated or local files
-dwfconstanst.py
-simplerun
-.venv/
-__pycache__/
-experiments/
-noise_testing/tests/

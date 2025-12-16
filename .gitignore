@@ -30,16 +30,15 @@ ENV/
 *.swo
 *~
 
-# Logs and data files
-*.log
-*.csv
-*.txt
-log*.csv
-log*.txt
-
 # Experiment data (TENG)
 experiments/*/
 !experiments/.gitkeep
+TENG/experiments/
+TENG/noise_testing/tests/
+
+# TENG specific
+dwfconstanst.py
+simplerun
 
 # Temporary files
 *.tmp
