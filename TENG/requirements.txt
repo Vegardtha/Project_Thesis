@@ -1,0 +1,12 @@
+# TENG Experiment Requirements
+
+# Core scientific packages
+numpy>=1.21.0
+pandas>=1.3.0
+matplotlib>=3.4.0
+
+# Hardware communication
+pyserial>=3.5
+
+# Note: Digilent WaveForms SDK (dwf library) must be installed separately
+# Download from: https://digilent.com/shop/software/digilent-waveforms/
