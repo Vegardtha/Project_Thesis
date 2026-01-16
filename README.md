@@ -13,6 +13,7 @@ Real-time CPR depth measurement system using dual IMU sensors.
 **Quick start:**
 ```bash
 cd Kalman_testing
+pip install -r requirements.txt
 python live_plotting2.py --port /dev/cu.usbmodem1201
 ```
 

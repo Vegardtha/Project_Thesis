@@ -20,11 +20,12 @@ A web-based controller for Prusa 3D printers with integrated force-controlled CP
 
 **Installation:**
 ```bash
+cd prusa_web
 pip install -r requirements.txt
 python3 app.py
 ```
 
-Access the web interface at `http://localhost:5000`
+Access the web interface at `http://localhost:5001`
 
 ## Raspberry Pi Deployment
 

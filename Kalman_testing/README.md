@@ -21,7 +21,8 @@ This project contains two distinct testing phases:
 ## Requirements
 
 ```bash
-pip install numpy matplotlib pyserial
+cd Kalman_testing
+pip install -r requirements.txt
 ```
 
 ## Usage
