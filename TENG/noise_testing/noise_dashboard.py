@@ -15,6 +15,7 @@ import pandas as pd
 from datetime import datetime
 from scipy.signal import welch
 from flask import Flask, render_template, jsonify, request
+from typing import Optional
 
 # ── Config ──────────────────────────────────────────────────────────────────
 BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
@@ -79,7 +80,7 @@ def detect_columns(df: pd.DataFrame) -> list[str]:
     return [c for c in candidates if c in df.columns]
 
 
-def load_file(path: str) -> pd.DataFrame | None:
+def load_file(path: str) -> Optional[pd.DataFrame]:
     try:
         return pd.read_csv(path)
     except Exception:
