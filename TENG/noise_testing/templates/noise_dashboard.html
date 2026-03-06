@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Noise Testing Dashboard</title>
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+  <style>
+    /* ── Reset & base ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ─────────────────────────────────────────────────── */
+    .app { display: flex; height: 100vh; overflow: hidden; }
+
+    .sidebar {
+      width: 320px; min-width: 280px;
+      background: #1a1d26;
+      border-right: 1px solid #2a2e3e;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .sidebar-header {
+      padding: 18px 16px 12px;
+      border-bottom: 1px solid #2a2e3e;
+    }
+    .sidebar-header h1 { font-size: 1.05rem; color: #a78bfa; letter-spacing: .5px; }
+    .sidebar-header p  { font-size: .75rem; color: #6b7280; margin-top: 4px; }
+
+    .file-list {
+      flex: 1; overflow-y: auto;
+      padding: 8px;
+    }
+    .file-list::-webkit-scrollbar { width: 6px; }
+    .file-list::-webkit-scrollbar-track { background: transparent; }
+    .file-list::-webkit-scrollbar-thumb { background: #3a3e52; border-radius: 3px; }
+
+    .file-card {
+      background: #22263a;
+      border: 1px solid #2a2e3e;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      position: relative;
+    }
+    .file-card:hover { border-color: #6d5acd; background: #272b42; }
+    .file-card.selected { border-color: #a78bfa; background: #2b2a4a; }
+
+    .file-card-top { display: flex; align-items: center; gap: 8px; }
+    .file-check {
+      width: 16px; height: 16px; min-width: 16px;
+      border-radius: 4px; border: 2px solid #6b7280;
+      background: transparent; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s, border-color .15s;
+    }
+    .file-check.checked { background: #7c3aed; border-color: #7c3aed; }
+    .file-check.checked::after { content: '✓'; font-size: 10px; color: #fff; }
+
+    .file-name {
+      font-size: .72rem; color: #9ca3af; word-break: break-all;
+      flex: 1;
+    }
+    .file-label-badge {
+      font-size: .7rem; color: #a78bfa; background: #2d2060;
+      border-radius: 20px; padding: 1px 7px; white-space: nowrap;
+    }
+    .file-filtered-badge {
+      font-size: .65rem; color: #34d399; background: #0f3028;
+      border-radius: 20px; padding: 1px 7px; white-space: nowrap;
+    }
+
+    .file-stats {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 3px 8px; margin-top: 7px; font-size: .7rem;
+    }
+    .stat-item { color: #9ca3af; }
+    .stat-item span { color: #e2e8f0; font-weight: 600; }
+
+    .edit-label-area {
+      margin-top: 8px;
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .file-card.edit-open .edit-label-area { display: flex; }
+    .edit-label-area input, .edit-label-area textarea {
+      background: #16192a; border: 1px solid #3a3e52; border-radius: 5px;
+      color: #e0e0e0; font-size: .75rem; padding: 5px 8px; width: 100%;
+      resize: none;
+    }
+    .edit-label-area textarea { height: 52px; }
+    .edit-label-area .btn-save {
+      align-self: flex-end;
+      background: #7c3aed; color: #fff; border: none; border-radius: 5px;
+      padding: 4px 12px; font-size: .72rem; cursor: pointer;
+    }
+    .edit-label-area .btn-save:hover { background: #6d28d9; }
+    .edit-toggle {
+      font-size: .65rem; color: #6b7280; cursor: pointer;
+      margin-top: 5px; display: inline-block;
+    }
+    .edit-toggle:hover { color: #a78bfa; }
+
+    /* ── Main content ────────────────────────────────────────────── */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    .top-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 20px;
+      background: #1a1d26;
+      border-bottom: 1px solid #2a2e3e;
+      flex-wrap: wrap;
+    }
+    .top-bar h2 { font-size: .95rem; color: #c4b5fd; flex: 1; min-width: 120px; }
+    .tab-btn {
+      background: #22263a; border: 1px solid #3a3e52;
+      color: #9ca3af; border-radius: 6px; padding: 6px 14px;
+      font-size: .8rem; cursor: pointer; transition: all .15s;
+    }
+    .tab-btn:hover { border-color: #a78bfa; color: #e0e0e0; }
+    .tab-btn.active { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+    .btn-compare {
+      background: #059669; border: none; color: #fff;
+      border-radius: 6px; padding: 6px 16px; font-size: .8rem;
+      cursor: pointer; transition: background .15s;
+    }
+    .btn-compare:hover { background: #047857; }
+    .btn-clear {
+      background: transparent; border: 1px solid #3a3e52; color: #9ca3af;
+      border-radius: 6px; padding: 6px 14px; font-size: .8rem; cursor: pointer;
+    }
+    .btn-clear:hover { border-color: #f87171; color: #f87171; }
+    .selection-count {
+      font-size: .75rem; color: #6b7280;
+      background: #22263a; border: 1px solid #3a3e52;
+      border-radius: 20px; padding: 4px 10px;
+    }
+
+    .content { flex: 1; overflow-y: auto; padding: 20px; }
+    .content::-webkit-scrollbar { width: 8px; }
+    .content::-webkit-scrollbar-track { background: transparent; }
+    .content::-webkit-scrollbar-thumb { background: #3a3e52; border-radius: 4px; }
+
+    /* ── Panels ─────────────────────────────────────────────────── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── Overview table ─────────────────────────────────────────── */
+    .overview-hint {
+      text-align: center; padding: 60px 20px; color: #4b5563;
+      font-size: .9rem; line-height: 1.8;
+    }
+    .overview-hint strong { color: #7c3aed; }
+
+    table {
+      width: 100%; border-collapse: collapse; font-size: .78rem;
+    }
+    thead th {
+      background: #1e2235; color: #9ca3af;
+      padding: 10px 12px; text-align: left;
+      border-bottom: 1px solid #2a2e3e;
+      font-weight: 500; font-size: .72rem; letter-spacing: .5px;
+      text-transform: uppercase; white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid #1e2235; }
+    tbody tr:hover { background: #1e2235; }
+    tbody td { padding: 9px 12px; color: #d1d5db; }
+    td.numeric { text-align: right; font-variant-numeric: tabular-nums; }
+    .badge-col { color: #34d399; font-size: .68rem; }
+    .badge-raw { color: #60a5fa; font-size: .68rem; }
+
+    /* ── Plot grid ──────────────────────────────────────────────── */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+      gap: 16px;
+    }
+    .chart-card {
+      background: #1a1d26; border: 1px solid #2a2e3e; border-radius: 10px;
+      overflow: hidden;
+    }
+    .chart-card h3 {
+      padding: 10px 14px; font-size: .8rem; color: #c4b5fd;
+      border-bottom: 1px solid #2a2e3e;
+    }
+    .chart-container { width: 100%; height: 310px; }
+    .full-width { grid-column: 1 / -1; }
+    .chart-container.tall { height: 380px; }
+
+    /* ── Stats cards ────────────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: #1a1d26; border: 1px solid #2a2e3e; border-radius: 10px;
+      padding: 14px;
+    }
+    .stat-card h4 { font-size: .8rem; color: #a78bfa; margin-bottom: 10px; }
+    .stat-card table { width: 100%; }
+    .stat-card td { padding: 3px 0; font-size: .75rem; }
+    .stat-card td:last-child { text-align: right; color: #e2e8f0; font-weight: 600; }
+
+    /* ── Empty / loading states ─────────────────────────────────── */
+    .empty-state {
+      text-align: center; padding: 80px 20px; color: #4b5563;
+    }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+    .spinner {
+      text-align: center; padding: 60px; color: #6b7280; font-size: .85rem;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Sidebar ─────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>⚡ Noise Dashboard</h1>
+      <p>Select files to compare</p>
+    </div>
+    <div class="file-list" id="fileList">
+      <div class="spinner">Loading files…</div>
+    </div>
+  </aside>
+
+  <!-- ── Main ────────────────────────────────────────────────── -->
+  <div class="main">
+    <div class="top-bar">
+      <h2>Noise Measurement Analysis</h2>
+      <span class="selection-count" id="selectionCount">0 selected</span>
+      <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
+      <button class="tab-btn" onclick="switchTab('timeseries')">Time Domain</button>
+      <button class="tab-btn" onclick="switchTab('psd')">Frequency (PSD)</button>
+      <button class="tab-btn" onclick="switchTab('histogram')">Distribution</button>
+      <button class="tab-btn" onclick="switchTab('stats')">Stats Table</button>
+      <button class="btn-compare" onclick="runAnalysis()">▶ Analyse</button>
+      <button class="btn-clear" onclick="clearSelection()">Clear</button>
+    </div>
+    <div class="content">
+      <div class="panel active" id="panel-overview">
+        <div class="overview-hint" id="overviewHint">
+          Select one or more measurements in the sidebar,<br>
+          then click <strong>▶ Analyse</strong> to compare them.
+        </div>
+        <div id="statsGrid" class="stats-grid" style="display:none"></div>
+        <table id="overviewTable" style="display:none">
+          <thead>
+            <tr>
+              <th>Label / File</th>
+              <th>Type</th>
+              <th class="numeric">Mean (mV)</th>
+              <th class="numeric">Std Dev (mV)</th>
+              <th class="numeric">RMS (mV)</th>
+              <th class="numeric">Peak-Peak (mV)</th>
+              <th class="numeric">Samples</th>
+            </tr>
+          </thead>
+          <tbody id="overviewTbody"></tbody>
+        </table>
+      </div>
+      <div class="panel" id="panel-timeseries">
+        <div class="empty-state" id="tsHint"><div class="icon">📈</div>Select files and click Analyse</div>
+        <div class="chart-grid" id="tsCharts"></div>
+      </div>
+      <div class="panel" id="panel-psd">
+        <div class="empty-state" id="psdHint"><div class="icon">🔊</div>Select files and click Analyse</div>
+        <div class="chart-grid" id="psdCharts"></div>
+      </div>
+      <div class="panel" id="panel-histogram">
+        <div class="empty-state" id="histHint"><div class="icon">📊</div>Select files and click Analyse</div>
+        <div class="chart-grid" id="histCharts"></div>
+      </div>
+      <div class="panel" id="panel-stats">
+        <div class="empty-state" id="statsHint"><div class="icon">🔢</div>Select files and click Analyse</div>
+        <div id="statsTableWrap" style="display:none">
+          <table>
+            <thead>
+              <tr>
+                <th>Label / File</th>
+                <th>Channel</th>
+                <th class="numeric">Mean (mV)</th>
+                <th class="numeric">Std Dev (mV)</th>
+                <th class="numeric">RMS (mV)</th>
+                <th class="numeric">Peak-Peak (mV)</th>
+                <th class="numeric">Max (mV)</th>
+                <th class="numeric">Min (mV)</th>
+                <th class="numeric">Samples</th>
+              </tr>
+            </thead>
+            <tbody id="statsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let allFiles = [];
+let selected = new Set();
+let currentTab = 'overview';
+
+const PALETTE = [
+  '#a78bfa','#34d399','#60a5fa','#fb923c','#f472b6',
+  '#facc15','#38bdf8','#4ade80','#c084fc','#f87171',
+];
+const DASH_STYLES = ['solid','dash','dot','dashdot'];
+
+const plotlyLayout = (title, xLabel, yLabel, extra={}) => ({
+  title: { text: title, font: { size: 13, color: '#c4b5fd' } },
+  paper_bgcolor: 'transparent',
+  plot_bgcolor:  '#12151f',
+  font: { color: '#9ca3af', size: 11 },
+  xaxis: { title: xLabel, gridcolor: '#1e2235', zerolinecolor: '#2a2e3e' },
+  yaxis: { title: yLabel, gridcolor: '#1e2235', zerolinecolor: '#2a2e3e' },
+  margin: { l: 55, r: 20, t: 42, b: 50 },
+  legend: { bgcolor: 'transparent', font: { size: 10 } },
+  hovermode: 'x unified',
+  ...extra,
+});
+
+const plotlyConfig = { responsive: true, displaylogo: false,
+  modeBarButtonsToRemove: ['lasso2d','select2d'] };
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+async function loadFiles() {
+  const res = await fetch('/api/files');
+  allFiles = await res.json();
+  renderSidebar();
+}
+
+function renderSidebar() {
+  const el = document.getElementById('fileList');
+  if (!allFiles.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:30px 10px;font-size:.8rem;">No recordings found.<br>Run a recording script \u2013 files are saved to <code>noise_testing/recordings/</code>.</div>';
+    return;
+  }
+  el.innerHTML = allFiles.map((f, i) => `
+    <div class="file-card ${selected.has(f.name) ? 'selected' : ''}" id="card-${i}" onclick="toggleCard(${i}, event)">
+      <div class="file-card-top">
+        <div class="file-check ${selected.has(f.name) ? 'checked' : ''}" id="chk-${i}"></div>
+        <span class="file-name">${f.name}</span>
+        ${f.label ? `<span class="file-label-badge">${f.label}</span>` : ''}
+        ${f.filtered ? '<span class="file-filtered-badge">filtered</span>' : ''}
+      </div>
+      ${f.stats && f.stats.std_mv !== undefined ? `
+      <div class="file-stats">
+        <div class="stat-item">Std: <span>${f.stats.std_mv} mV</span></div>
+        <div class="stat-item">RMS: <span>${f.stats.rms_mv} mV</span></div>
+        <div class="stat-item">P-P: <span>${f.stats.pp_mv} mV</span></div>
+        <div class="stat-item">N: <span>${(f.stats.n_samples||0).toLocaleString()}</span></div>
+      </div>` : ''}
+      ${f.note ? `<div style="margin-top:6px;font-size:.68rem;color:#6b7280;font-style:italic">${f.note}</div>` : ''}
+      <span class="edit-toggle" onclick="toggleEdit(${i}, event)">✏ edit label</span>
+      <div class="edit-label-area" id="edit-${i}">
+        <input  id="lbl-${i}"  type="text"     placeholder="Short label (e.g. 'No shielding')" value="${f.label||''}"/>
+        <textarea id="note-${i}" placeholder="Notes (setup details, conditions…)">${f.note||''}</textarea>
+        <button class="btn-save" onclick="saveLabel(${i}, event)">Save</button>
+      </div>
+    </div>
+  `).join('');
+  updateCount();
+}
+
+function toggleCard(i, e) {
+  // Don't toggle when clicking inside the edit area
+  if (e.target.closest('.edit-label-area') || e.target.classList.contains('edit-toggle')) return;
+  const name = allFiles[i].name;
+  if (selected.has(name)) { selected.delete(name); } else { selected.add(name); }
+  renderSidebar();
+}
+
+function toggleEdit(i, e) {
+  e.stopPropagation();
+  const card = document.getElementById(`card-${i}`);
+  card.classList.toggle('edit-open');
+}
+
+async function saveLabel(i, e) {
+  e.stopPropagation();
+  const label = document.getElementById(`lbl-${i}`).value.trim();
+  const note  = document.getElementById(`note-${i}`).value.trim();
+  const name  = allFiles[i].name;
+  await fetch('/api/label', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, label, note }),
+  });
+  allFiles[i].label = label;
+  allFiles[i].note  = note;
+  renderSidebar();
+  // Close edit area
+  const card = document.getElementById(`card-${i}`);
+  if (card) card.classList.remove('edit-open');
+}
+
+function updateCount() {
+  document.getElementById('selectionCount').textContent = `${selected.size} selected`;
+}
+
+function clearSelection() {
+  selected.clear();
+  renderSidebar();
+}
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.toLowerCase().includes(
+      tab === 'timeseries' ? 'time' : tab === 'psd' ? 'freq' :
+      tab === 'histogram' ? 'dist' : tab === 'stats' ? 'stats' : tab
+    ));
+  });
+}
+
+// ── Analysis ──────────────────────────────────────────────────────────────────
+async function runAnalysis() {
+  if (!selected.size) {
+    alert('Please select at least one measurement first.');
+    return;
+  }
+  const names = [...selected];
+  const qs = names.map(n => `names=${encodeURIComponent(n)}`).join('&');
+
+  const [tsData, psdData, histData, statsData] = await Promise.all([
+    fetch('/api/timeseries?' + qs).then(r => r.json()),
+    fetch('/api/psd?'        + qs).then(r => r.json()),
+    fetch('/api/histogram?'  + qs).then(r => r.json()),
+    fetch('/api/stats?'      + qs).then(r => r.json()),
+  ]);
+
+  renderOverview(statsData);
+  renderTimeseries(tsData);
+  renderPSD(psdData);
+  renderHistogram(histData);
+  renderStatsTable(statsData);
+}
+
+// ── Overview ──────────────────────────────────────────────────────────────────
+function renderOverview(statsData) {
+  const hint  = document.getElementById('overviewHint');
+  const table = document.getElementById('overviewTable');
+  const tbody = document.getElementById('overviewTbody');
+  const grid  = document.getElementById('statsGrid');
+
+  hint.style.display  = 'none';
+  table.style.display = '';
+  grid.style.display  = '';
+
+  // stats cards
+  grid.innerHTML = statsData.map((d, di) => {
+    const colKeys = Object.keys(d.stats);
+    return colKeys.map((col, ci) => {
+      const s = d.stats[col];
+      const color = PALETTE[(di * 3 + ci) % PALETTE.length];
+      return `
+        <div class="stat-card">
+          <h4 style="color:${color}">${d.label || d.name} — ${col}</h4>
+          <table>
+            <tr><td>Mean</td><td>${s.mean_mv} mV</td></tr>
+            <tr><td>Std Dev</td><td>${s.std_mv} mV</td></tr>
+            <tr><td>RMS</td><td>${s.rms_mv} mV</td></tr>
+            <tr><td>Peak-to-Peak</td><td>${s.pp_mv} mV</td></tr>
+            <tr><td>Max</td><td>${s.max_mv} mV</td></tr>
+            <tr><td>Min</td><td>${s.min_mv} mV</td></tr>
+            <tr><td>Samples</td><td>${(s.n_samples||0).toLocaleString()}</td></tr>
+          </table>
+        </div>`;
+    }).join('');
+  }).join('');
+
+  // table rows
+  tbody.innerHTML = statsData.flatMap(d =>
+    Object.entries(d.stats).map(([col, s]) => `
+      <tr>
+        <td>${d.label || d.name}</td>
+        <td class="${col === 'Filtered' ? 'badge-col' : 'badge-raw'}">${col}</td>
+        <td class="numeric">${s.mean_mv}</td>
+        <td class="numeric">${s.std_mv}</td>
+        <td class="numeric">${s.rms_mv}</td>
+        <td class="numeric">${s.pp_mv}</td>
+        <td class="numeric">${(s.n_samples||0).toLocaleString()}</td>
+      </tr>`
+    )
+  ).join('');
+}
+
+// ── Time series ───────────────────────────────────────────────────────────────
+function renderTimeseries(tsData) {
+  const hint   = document.getElementById('tsHint');
+  const charts = document.getElementById('tsCharts');
+  hint.style.display = 'none';
+  charts.innerHTML = '';
+
+  // One chart per file (overlapping raw/filtered), plus one overlay chart
+  const overlayTraces = [];
+  let colorIdx = 0;
+
+  tsData.forEach((d, di) => {
+    const id = `ts-${di}`;
+    const card = document.createElement('div');
+    card.className = 'chart-card';
+    card.innerHTML = `<h3>${d.label || d.name}</h3><div class="chart-container" id="${id}"></div>`;
+    charts.appendChild(card);
+
+    const traces = d.series.map((s, si) => {
+      const color = PALETTE[colorIdx % PALETTE.length];
+      colorIdx++;
+      overlayTraces.push({
+        x: s.times, y: s.volts,
+        name: `${d.label || d.name} (${s.col})`,
+        type: 'scattergl', mode: 'lines',
+        line: { color, width: 1, dash: DASH_STYLES[si % DASH_STYLES.length] },
+      });
+      return {
+        x: s.times, y: s.volts,
+        name: s.col, type: 'scattergl', mode: 'lines',
+        line: { color, width: 1 },
+      };
+    });
+    Plotly.newPlot(id, traces,
+      plotlyLayout('Time Domain', 'Time (ms)', 'Voltage (mV)'), plotlyConfig);
+  });
+
+  // Combined overlay chart
+  if (tsData.length > 1) {
+    const oid = 'ts-overlay';
+    const card = document.createElement('div');
+    card.className = 'chart-card full-width';
+    card.innerHTML = `<h3>All Measurements – Overlay</h3><div class="chart-container tall" id="${oid}"></div>`;
+    charts.prepend(card);
+    Plotly.newPlot(oid, overlayTraces,
+      plotlyLayout('Time Domain – All Measurements', 'Time (ms)', 'Voltage (mV)'), plotlyConfig);
+  }
+}
+
+// ── PSD ───────────────────────────────────────────────────────────────────────
+function renderPSD(psdData) {
+  const hint   = document.getElementById('psdHint');
+  const charts = document.getElementById('psdCharts');
+  hint.style.display = 'none';
+  charts.innerHTML = '';
+
+  const overlayTraces = [];
+  let colorIdx = 0;
+
+  psdData.forEach((d, di) => {
+    const id = `psd-${di}`;
+    const card = document.createElement('div');
+    card.className = 'chart-card';
+    card.innerHTML = `<h3>PSD: ${d.label || d.name}</h3><div class="chart-container" id="${id}"></div>`;
+    charts.appendChild(card);
+
+    const traces = d.series.map((s, si) => {
+      const color = PALETTE[colorIdx % PALETTE.length];
+      colorIdx++;
+      overlayTraces.push({
+        x: s.freqs, y: s.log_psd,
+        name: `${d.label || d.name} (${s.col})`,
+        type: 'scattergl', mode: 'lines',
+        line: { color, width: 1.2, dash: DASH_STYLES[si % DASH_STYLES.length] },
+      });
+      return {
+        x: s.freqs, y: s.log_psd, name: s.col,
+        type: 'scattergl', mode: 'lines',
+        line: { color, width: 1.2 },
+      };
+    });
+    Plotly.newPlot(id, traces,
+      plotlyLayout('Power Spectral Density (Welch)', 'Frequency (Hz)', 'log₁₀ PSD'), plotlyConfig);
+  });
+
+  if (psdData.length > 1) {
+    const oid = 'psd-overlay';
+    const card = document.createElement('div');
+    card.className = 'chart-card full-width';
+    card.innerHTML = `<h3>PSD – Overlay Comparison</h3><div class="chart-container tall" id="${oid}"></div>`;
+    charts.prepend(card);
+    Plotly.newPlot(oid, overlayTraces,
+      plotlyLayout('PSD – All Measurements', 'Frequency (Hz)', 'log₁₀ PSD'), plotlyConfig);
+  }
+}
+
+// ── Histogram ─────────────────────────────────────────────────────────────────
+function renderHistogram(histData) {
+  const hint   = document.getElementById('histHint');
+  const charts = document.getElementById('histCharts');
+  hint.style.display = 'none';
+  charts.innerHTML = '';
+
+  let colorIdx = 0;
+  const overlayTraces = [];
+
+  histData.forEach((d, di) => {
+    const id = `hist-${di}`;
+    const card = document.createElement('div');
+    card.className = 'chart-card';
+    card.innerHTML = `<h3>Distribution: ${d.label || d.name}</h3><div class="chart-container" id="${id}"></div>`;
+    charts.appendChild(card);
+
+    const traces = d.series.map((s, si) => {
+      const color = PALETTE[colorIdx % PALETTE.length];
+      colorIdx++;
+      overlayTraces.push({
+        x: s.centres, y: s.counts,
+        name: `${d.label || d.name} (${s.col})`,
+        type: 'bar', opacity: 0.55, marker: { color },
+      });
+      return {
+        x: s.centres, y: s.counts, name: s.col,
+        type: 'bar', opacity: 0.7, marker: { color },
+      };
+    });
+    Plotly.newPlot(id, traces,
+      plotlyLayout('Voltage Distribution', 'Voltage (mV)', 'Count', { barmode: 'overlay' }), plotlyConfig);
+  });
+
+  if (histData.length > 1) {
+    const oid = 'hist-overlay';
+    const card = document.createElement('div');
+    card.className = 'chart-card full-width';
+    card.innerHTML = `<h3>Distribution – Overlay</h3><div class="chart-container tall" id="${oid}"></div>`;
+    charts.prepend(card);
+    Plotly.newPlot(oid, overlayTraces,
+      plotlyLayout('Voltage Distribution – All', 'Voltage (mV)', 'Count', { barmode: 'overlay' }), plotlyConfig);
+  }
+}
+
+// ── Stats table ───────────────────────────────────────────────────────────────
+function renderStatsTable(statsData) {
+  const hint = document.getElementById('statsHint');
+  const wrap = document.getElementById('statsTableWrap');
+  const tbody = document.getElementById('statsTbody');
+  hint.style.display = 'none';
+  wrap.style.display = '';
+
+  tbody.innerHTML = statsData.flatMap(d =>
+    Object.entries(d.stats).map(([col, s]) => `
+      <tr>
+        <td>${d.label || d.name}</td>
+        <td class="${col === 'Filtered' ? 'badge-col' : 'badge-raw'}">${col}</td>
+        <td class="numeric">${s.mean_mv}</td>
+        <td class="numeric">${s.std_mv}</td>
+        <td class="numeric">${s.rms_mv}</td>
+        <td class="numeric">${s.pp_mv}</td>
+        <td class="numeric">${s.max_mv}</td>
+        <td class="numeric">${s.min_mv}</td>
+        <td class="numeric">${(s.n_samples||0).toLocaleString()}</td>
+      </tr>`)
+  ).join('');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadFiles();
+</script>
+</body>
+</html>

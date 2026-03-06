@@ -43,3 +43,4 @@ simplerun
 # Temporary files
 *.tmp
 *.bak
+3d_jig/imu_recordings/imu_sequence_20260304_190827.csv

@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TENG Experiment Control</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --accent: #00e5ff;
+  --accent2: #7c4dff;
+  --bg-card: #1e1e2e;
+  --bg-body: #11111b;
+  --border: #313244;
+  --text: #cdd6f4;
+  --text-dim: #6c7086;
+  --success: #a6e3a1;
+  --danger: #f38ba8;
+  --warning: #f9e2af;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg-body);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Animated gradient top bar */
+.top-bar {
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent));
+  background-size: 200% 100%;
+  animation: gradientShift 3s ease infinite;
+}
+@keyframes gradientShift {
+  0%,100% { background-position: 0% 50% }
+  50% { background-position: 100% 50% }
+}
+
+.navbar-brand {
+  font-weight: 700;
+  letter-spacing: 1px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: border-color 0.2s;
+}
+.card:hover { border-color: #45475a; }
+
+.card-header {
+  background: transparent;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+  padding: 0.75rem 1rem;
+}
+
+.form-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-dim);
+  margin-bottom: 0.2rem;
+}
+
+.form-control, .form-select {
+  background: #181825;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  padding: 0.4rem 0.65rem;
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0,229,255,0.15);
+  background: #181825;
+  color: var(--text);
+}
+
+.btn-accent {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #11111b;
+  border: none;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+.btn-accent:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(0,229,255,0.3);
+  color: #11111b;
+}
+.btn-accent:disabled {
+  opacity: 0.5;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-danger-soft {
+  background: rgba(243,139,168,0.15);
+  color: var(--danger);
+  border: 1px solid rgba(243,139,168,0.3);
+  border-radius: 8px;
+}
+.btn-danger-soft:hover {
+  background: rgba(243,139,168,0.25);
+  color: var(--danger);
+}
+
+.btn-outline-accent {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 8px;
+  background: transparent;
+}
+.btn-outline-accent:hover {
+  background: rgba(0,229,255,0.1);
+  color: var(--accent);
+}
+
+/* Progress bar */
+.progress {
+  height: 6px;
+  background: #181825;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-bar {
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  transition: width 0.5s ease;
+}
+
+/* Log panel */
+.log-panel {
+  background: #0d0d17;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.75rem;
+  max-height: 260px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+.log-panel::-webkit-scrollbar { width: 6px; }
+.log-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.log-line { color: var(--text-dim); }
+.log-line .ts { color: var(--accent); }
+.log-line.err { color: var(--danger); }
+
+/* Status badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.status-idle { background: rgba(108,112,134,0.2); color: var(--text-dim); }
+.status-running { background: rgba(0,229,255,0.15); color: var(--accent); }
+.status-complete { background: rgba(166,227,161,0.15); color: var(--success); }
+.status-error { background: rgba(243,139,168,0.15); color: var(--danger); }
+
+.spinner-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 0.4; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Chart containers */
+.chart-container {
+  position: relative;
+  background: #181825;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  min-height: 280px;
+}
+
+/* Stats grid */
+.stat-card {
+  background: #181825;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: center;
+}
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.stat-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* Past experiments list */
+.exp-item {
+  background: #181825;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.exp-item:hover {
+  border-color: var(--accent);
+  background: rgba(0,229,255,0.05);
+}
+.exp-item.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* Tabs */
+.nav-pills .nav-link {
+  color: var(--text-dim);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  padding: 0.4rem 0.9rem;
+}
+.nav-pills .nav-link.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #11111b;
+  font-weight: 600;
+}
+
+/* Input group labels */
+.input-group-text {
+  background: #181825;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  border-radius: 8px;
+}
+
+/* Responsive fix */
+@media (max-width: 768px) {
+  .stat-value { font-size: 1.3rem; }
+}
+</style>
+</head>
+<body>
+<div class="top-bar"></div>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg" style="background:var(--bg-card); border-bottom:1px solid var(--border);">
+  <div class="container-fluid px-3">
+    <span class="navbar-brand mb-0 h1"><i class="bi bi-lightning-charge-fill me-1"></i>TENG Lab</span>
+    <div class="d-flex align-items-center gap-3">
+      <span id="statusBadge" class="status-badge status-idle">
+        <span id="statusDot"></span> <span id="statusLabel">Idle</span>
+      </span>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid px-3 py-3">
+<div class="row g-3">
+
+  <!-- ===== LEFT COLUMN: Config + Controls ===== -->
+  <div class="col-lg-3 col-md-4">
+
+    <!-- Experiment Config Card -->
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-gear-fill me-1"></i> Experiment Config</div>
+      <div class="card-body p-2">
+        <div class="mb-2">
+          <label class="form-label">Name</label>
+          <input type="text" id="cfgName" class="form-control form-control-sm" value="TENG_Test">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Description</label>
+          <input type="text" id="cfgDesc" class="form-control form-control-sm" value="TENG impact testing">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Acquisitions</label>
+          <input type="number" id="cfgNumAcq" class="form-control form-control-sm" value="10" min="1" max="10000">
+        </div>
+        <div class="form-check form-switch mb-1">
+          <input class="form-check-input" type="checkbox" id="cfgSavePlots" checked>
+          <label class="form-check-label" for="cfgSavePlots" style="font-size:0.82rem">Save plots to disk</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Oscilloscope Config Card -->
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-activity me-1"></i> Oscilloscope</div>
+      <div class="card-body p-2">
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label">Sample Rate</label>
+            <div class="input-group input-group-sm">
+              <input type="number" id="cfgFs" class="form-control" value="500" step="100" min="1">
+              <span class="input-group-text">kHz</span>
+            </div>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Acq. Time</label>
+            <div class="input-group input-group-sm">
+              <input type="number" id="cfgAcqTime" class="form-control" value="15" step="1" min="1">
+              <span class="input-group-text">ms</span>
+            </div>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Amplitude Range</label>
+            <div class="input-group input-group-sm">
+              <input type="number" id="cfgAmpRange" class="form-control" value="50" step="5" min="0.1">
+              <span class="input-group-text">V</span>
+            </div>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Offset</label>
+            <div class="input-group input-group-sm">
+              <input type="number" id="cfgOffset" class="form-control" value="0" step="0.1">
+              <span class="input-group-text">V</span>
+            </div>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Trigger Level</label>
+            <div class="input-group input-group-sm">
+              <input type="number" id="cfgTrigLevel" class="form-control" value="0.5" step="0.1" min="0">
+              <span class="input-group-text">V</span>
+            </div>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Trigger Edge</label>
+            <select id="cfgTrigEdge" class="form-select form-select-sm">
+              <option value="rising" selected>Rising</option>
+              <option value="falling">Falling</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Channel</label>
+            <select id="cfgChannel" class="form-select form-select-sm">
+              <option value="0">Ch 1</option>
+              <option value="1">Ch 2</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Trigger Ch.</label>
+            <select id="cfgTrigCh" class="form-select form-select-sm">
+              <option value="0">Ch 1</option>
+              <option value="1">Ch 2</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="d-grid gap-2 mb-3">
+      <button id="btnStart" class="btn btn-accent" onclick="startExperiment(false)">
+        <i class="bi bi-play-fill me-1"></i> Start Experiment
+      </button>
+      <button id="btnSimulate" class="btn btn-outline-accent" onclick="startExperiment(true)">
+        <i class="bi bi-cpu me-1"></i> Simulate (No Hardware)
+      </button>
+      <button id="btnStop" class="btn btn-danger-soft" onclick="stopExperiment()" disabled>
+        <i class="bi bi-stop-fill me-1"></i> Stop
+      </button>
+    </div>
+
+    <!-- Past Experiments -->
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-folder2-open me-1"></i> Past Experiments</span>
+        <button class="btn btn-sm btn-outline-accent py-0 px-2" onclick="loadExperiments()" style="font-size:0.72rem">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+      <div class="card-body p-2" style="max-height:300px; overflow-y:auto" id="expList">
+        <div class="text-center text-muted py-3" style="font-size:0.82rem">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RIGHT COLUMN: Dashboard ===== -->
+  <div class="col-lg-9 col-md-8">
+
+    <!-- Progress -->
+    <div class="card mb-3" id="progressCard" style="display:none">
+      <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span id="progressText" style="font-size:0.85rem; font-weight:600">Acquisition 0/0</span>
+          <span id="progressPct" style="font-size:0.85rem; font-weight:700; color:var(--accent)">0%</span>
+        </div>
+        <div class="progress">
+          <div id="progressBar" class="progress-bar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row g-2 mb-3" id="statsRow" style="display:none">
+      <div class="col-3">
+        <div class="stat-card">
+          <div class="stat-value" id="statAcq">0</div>
+          <div class="stat-label">Acquisitions</div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="stat-card">
+          <div class="stat-value" id="statMean">—</div>
+          <div class="stat-label">Mean Peak (V)</div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="stat-card">
+          <div class="stat-value" id="statMax">—</div>
+          <div class="stat-label">Max Peak (V)</div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="stat-card">
+          <div class="stat-value" id="statStd">—</div>
+          <div class="stat-label">Std Dev (V)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs for charts -->
+    <ul class="nav nav-pills mb-2" id="chartTabs">
+      <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="pill" href="#tabWaveform">
+          <i class="bi bi-graph-up me-1"></i>Waveforms
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="pill" href="#tabPeaks">
+          <i class="bi bi-bar-chart-fill me-1"></i>Peak Voltages
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="pill" href="#tabOverlay">
+          <i class="bi bi-layers me-1"></i>Overlay
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="pill" href="#tabAnalysis">
+          <i class="bi bi-clipboard-data me-1"></i>Analysis
+        </a>
+      </li>
+    </ul>
+
+    <div class="tab-content mb-3">
+      <!-- Waveform Tab -->
+      <div class="tab-pane fade show active" id="tabWaveform">
+        <div class="chart-container">
+          <canvas id="chartWaveform"></canvas>
+          <div id="waveformEmpty" class="text-center text-muted py-5" style="font-size:0.85rem">
+            <i class="bi bi-lightning" style="font-size:2rem; display:block; margin-bottom:0.5rem; opacity:0.3"></i>
+            Run an experiment to see waveforms
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 mt-2">
+          <label class="form-label mb-0" style="white-space:nowrap">Show acquisition:</label>
+          <input type="range" id="waveformSlider" class="form-range flex-grow-1" min="0" max="0" value="0" disabled>
+          <span id="waveformSliderLabel" class="text-muted" style="font-size:0.78rem; min-width:40px">—</span>
+        </div>
+      </div>
+
+      <!-- Peak Voltages Tab -->
+      <div class="tab-pane fade" id="tabPeaks">
+        <div class="chart-container">
+          <canvas id="chartPeaks"></canvas>
+          <div id="peaksEmpty" class="text-center text-muted py-5" style="font-size:0.85rem">
+            <i class="bi bi-bar-chart" style="font-size:2rem; display:block; margin-bottom:0.5rem; opacity:0.3"></i>
+            Peak voltage trend will appear here
+          </div>
+        </div>
+      </div>
+
+      <!-- Overlay Tab -->
+      <div class="tab-pane fade" id="tabOverlay">
+        <div class="chart-container">
+          <canvas id="chartOverlay"></canvas>
+          <div id="overlayEmpty" class="text-center text-muted py-5" style="font-size:0.85rem">
+            <i class="bi bi-layers" style="font-size:2rem; display:block; margin-bottom:0.5rem; opacity:0.3"></i>
+            Waveform overlay will appear here
+          </div>
+          <!-- Gradient legend (shown when many wfs) -->
+          <div id="overlayGradientLegend" style="display:none; position:absolute; bottom:16px; right:20px; text-align:center;">
+            <div style="font-size:0.7rem; color:var(--text-dim); margin-bottom:2px;" id="overlayCountLabel"></div>
+            <div style="width:120px; height:10px; border-radius:4px; background:linear-gradient(90deg, rgba(0,229,255,0.8), rgba(124,77,255,0.8));"></div>
+            <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--text-dim); margin-top:1px;">
+              <span>First</span><span>Last</span>
+            </div>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+          <label class="form-label mb-0" style="white-space:nowrap; font-size:0.78rem">Show:</label>
+          <select id="overlayLimit" class="form-select form-select-sm" style="width:100px" onchange="renderOverlay()">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="50">50 (max)</option>
+          </select>
+          <div class="form-check form-switch ms-2 mb-0">
+            <input class="form-check-input" type="checkbox" id="overlayShowMean" onchange="renderOverlay()">
+            <label class="form-check-label" for="overlayShowMean" style="font-size:0.78rem">Mean ± Std</label>
+          </div>
+          <div class="form-check form-switch ms-2 mb-0">
+            <input class="form-check-input" type="checkbox" id="overlayNormTime" onchange="renderOverlay()">
+            <label class="form-check-label" for="overlayNormTime" style="font-size:0.78rem">Normalize time</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analysis Tab -->
+      <div class="tab-pane fade" id="tabAnalysis">
+        <div class="row g-3">
+          <!-- Histogram -->
+          <div class="col-md-6">
+            <div class="chart-container" style="min-height:260px">
+              <canvas id="chartHistogram"></canvas>
+              <div id="histogramEmpty" class="text-center text-muted py-5" style="font-size:0.85rem">
+                <i class="bi bi-bar-chart-steps" style="font-size:2rem; display:block; margin-bottom:0.5rem; opacity:0.3"></i>
+                Peak voltage distribution
+              </div>
+            </div>
+          </div>
+          <!-- FFT -->
+          <div class="col-md-6">
+            <div class="chart-container" style="min-height:260px">
+              <canvas id="chartFFT"></canvas>
+              <div id="fftEmpty" class="text-center text-muted py-5" style="font-size:0.85rem">
+                <i class="bi bi-soundwave" style="font-size:2rem; display:block; margin-bottom:0.5rem; opacity:0.3"></i>
+                FFT of selected waveform
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2">
+              <label class="form-label mb-0" style="white-space:nowrap; font-size:0.78rem">FFT of acq.:</label>
+              <select id="fftSelect" class="form-select form-select-sm" style="width:100px" onchange="renderFFT()">
+                <option value="-1">Latest</option>
+              </select>
+            </div>
+          </div>
+          <!-- Detailed Stats Table -->
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header"><i class="bi bi-table me-1"></i> Detailed Statistics</div>
+              <div class="card-body p-2">
+                <div class="table-responsive">
+                  <table class="table table-sm table-dark mb-0" style="font-size:0.82rem;">
+                    <thead>
+                      <tr>
+                        <th>Metric</th><th>Value</th><th>Metric</th><th>Value</th>
+                      </tr>
+                    </thead>
+                    <tbody id="statsTableBody">
+                      <tr><td colspan="4" class="text-center text-muted">Load an experiment to see statistics</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-terminal me-1"></i> Log</span>
+        <button class="btn btn-sm btn-outline-accent py-0 px-2" onclick="document.getElementById('logPanel').innerHTML=''" style="font-size:0.72rem">Clear</button>
+      </div>
+      <div class="card-body p-2">
+        <div id="logPanel" class="log-panel"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ======================================================================
+// State
+// ======================================================================
+let pollTimer = null;
+let allWaveforms = [];   // [{acquisition, timestamps, voltages}]
+let allResults = [];     // [{acquisition, peak_voltage}]
+let currentExpName = null;  // name of currently loaded experiment
+let nWaveformsTotal = 0;    // total number of waveforms available
+let waveformCache = {};     // acq_num -> {timestamps, voltages}
+let viewableAcqs = [];      // max 200 evenly-spaced acquisition numbers for slider
+const MAX_VIEWABLE = 200;   // max waveforms browsable via slider
+const MAX_CHART_POINTS = 2000;  // Max points to render in peaks chart
+const MAX_OVERLAY_WAVEFORMS = 50;  // Hard cap for overlay requests
+
+// Chart instances
+let waveformChart = null;
+let peaksChart = null;
+let overlayChart = null;
+let histogramChart = null;
+let fftChart = null;
+
+// Chart.js global config for dark theme
+Chart.defaults.color = '#6c7086';
+Chart.defaults.borderColor = '#313244';
+Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+
+// ======================================================================
+// LTTB Downsampling (Largest Triangle Three Buckets)
+// ======================================================================
+function lttbDownsample(data, threshold) {
+  // data: [{x, y}], threshold: max output points
+  if (data.length <= threshold) return data;
+  const sampled = [data[0]];
+  const bucketSize = (data.length - 2) / (threshold - 2);
+  let a = 0;
+  for (let i = 0; i < threshold - 2; i++) {
+    const rangeStart = Math.floor((i + 1) * bucketSize) + 1;
+    const rangeEnd = Math.min(Math.floor((i + 2) * bucketSize) + 1, data.length);
+    let avgX = 0, avgY = 0;
+    for (let j = rangeStart; j < rangeEnd; j++) { avgX += data[j].x; avgY += data[j].y; }
+    avgX /= (rangeEnd - rangeStart);
+    avgY /= (rangeEnd - rangeStart);
+    let maxArea = -1, maxIdx = rangeStart;
+    const rangeOffs = Math.floor(i * bucketSize) + 1;
+    const rangeLen = Math.floor((i + 1) * bucketSize) + 1;
+    for (let j = rangeOffs; j < rangeLen && j < data.length; j++) {
+      const area = Math.abs((data[a].x - avgX) * (data[j].y - data[a].y) -
+                           (data[a].x - data[j].x) * (avgY - data[a].y)) * 0.5;
+      if (area > maxArea) { maxArea = area; maxIdx = j; }
+    }
+    sampled.push(data[maxIdx]);
+    a = maxIdx;
+  }
+  sampled.push(data[data.length - 1]);
+  return sampled;
+}
+
+// Simple array downsampler: picks every N-th + keeps min/max per bucket
+function downsampleArray(arr, maxLen) {
+  if (arr.length <= maxLen) return arr;
+  const step = Math.ceil(arr.length / maxLen);
+  const result = [];
+  for (let i = 0; i < arr.length; i += step) {
+    result.push(arr[i]);
+  }
+  return result;
+}
+
+/**
+ * Build a list of max MAX_VIEWABLE evenly-spaced acquisition numbers from allResults.
+ */
+function buildViewableAcqs() {
+  if (allResults.length === 0) { viewableAcqs = []; return; }
+  if (allResults.length <= MAX_VIEWABLE) {
+    viewableAcqs = allResults.map(r => r.acquisition);
+  } else {
+    viewableAcqs = [];
+    const step = (allResults.length - 1) / (MAX_VIEWABLE - 1);
+    for (let i = 0; i < MAX_VIEWABLE; i++) {
+      const idx = Math.round(i * step);
+      viewableAcqs.push(allResults[idx].acquisition);
+    }
+  }
+}
+
+// ======================================================================
+// Config gathering
+// ======================================================================
+function gatherConfig(simulate) {
+  return {
+    name: document.getElementById('cfgName').value || 'TENG_Test',
+    description: document.getElementById('cfgDesc').value || '',
+    num_acquisitions: parseInt(document.getElementById('cfgNumAcq').value) || 10,
+    sampling_frequency: parseFloat(document.getElementById('cfgFs').value) * 1e3 || 500e3,
+    acquisition_time_ms: parseFloat(document.getElementById('cfgAcqTime').value) || 15,
+    amplitude_range: parseFloat(document.getElementById('cfgAmpRange').value) || 50,
+    trigger_level: parseFloat(document.getElementById('cfgTrigLevel').value) || 0.5,
+    trigger_edge: document.getElementById('cfgTrigEdge').value,
+    channel: parseInt(document.getElementById('cfgChannel').value),
+    trigger_channel: parseInt(document.getElementById('cfgTrigCh').value),
+    offset: parseFloat(document.getElementById('cfgOffset').value) || 0,
+    save_plots: document.getElementById('cfgSavePlots').checked,
+    simulate: simulate,
+  };
+}
+
+// ======================================================================
+// Start / Stop
+// ======================================================================
+async function startExperiment(simulate) {
+  const cfg = gatherConfig(simulate);
+  try {
+    const resp = await fetch('/api/start', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(cfg),
+    });
+    const data = await resp.json();
+    if (data.error) { alert(data.error); return; }
+
+    // Reset charts
+    allWaveforms = [];
+    allResults = [];
+    currentExpName = null;
+    waveformCache = {};
+    destroyCharts();
+
+    document.getElementById('btnStart').disabled = true;
+    document.getElementById('btnSimulate').disabled = true;
+    document.getElementById('btnStop').disabled = false;
+    document.getElementById('progressCard').style.display = '';
+    document.getElementById('statsRow').style.display = '';
+
+    startPolling();
+  } catch (e) {
+    alert('Failed to start: ' + e.message);
+  }
+}
+
+async function stopExperiment() {
+  await fetch('/api/stop', {method: 'POST'});
+}
+
+// ======================================================================
+// Status Polling
+// ======================================================================
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(pollStatus, 600);
+}
+
+function stopPolling() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+async function pollStatus() {
+  try {
+    const [statusResp, waveResp] = await Promise.all([
+      fetch('/api/status'),
+      fetch('/api/waveforms'),
+    ]);
+    const status = await statusResp.json();
+    const waveforms = await waveResp.json();
+
+    // Update progress
+    document.getElementById('progressBar').style.width = status.progress + '%';
+    document.getElementById('progressPct').textContent = status.progress + '%';
+    document.getElementById('progressText').textContent =
+      `Acquisition ${status.current_acquisition}/${status.total}`;
+
+    // Update status badge
+    updateStatusBadge(status);
+
+    // Update log
+    updateLog(status.log);
+
+    // Update data
+    allResults = status.results || [];
+    allWaveforms = waveforms || [];
+
+    // Update stats
+    updateStats();
+
+    // Update charts
+    renderPeaks();
+    renderOverlay();
+    renderHistogram();
+    renderStatsTable();
+    updateFFTSelect();
+
+    // Update waveform slider
+    const slider = document.getElementById('waveformSlider');
+    if (allWaveforms.length > 0) {
+      slider.max = allWaveforms.length - 1;
+      slider.disabled = false;
+      // Auto-advance to latest if at end
+      if (parseInt(slider.value) >= allWaveforms.length - 2 || parseInt(slider.value) === 0) {
+        slider.value = allWaveforms.length - 1;
+      }
+      renderWaveform(parseInt(slider.value));
+    }
+
+    // Check if finished
+    if (status.finished) {
+      stopPolling();
+      document.getElementById('btnStart').disabled = false;
+      document.getElementById('btnSimulate').disabled = false;
+      document.getElementById('btnStop').disabled = true;
+      loadExperiments();
+    }
+  } catch (e) {
+    console.error('Poll error:', e);
+  }
+}
+
+function updateStatusBadge(status) {
+  const badge = document.getElementById('statusBadge');
+  const label = document.getElementById('statusLabel');
+  const dot = document.getElementById('statusDot');
+
+  if (status.error) {
+    badge.className = 'status-badge status-error';
+    label.textContent = 'Error';
+    dot.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i>';
+  } else if (status.running) {
+    badge.className = 'status-badge status-running';
+    label.textContent = status.status_text;
+    dot.innerHTML = '<div class="spinner-dot"></div>';
+  } else if (status.finished) {
+    badge.className = 'status-badge status-complete';
+    label.textContent = 'Complete';
+    dot.innerHTML = '<i class="bi bi-check-circle-fill"></i>';
+  } else {
+    badge.className = 'status-badge status-idle';
+    label.textContent = 'Idle';
+    dot.innerHTML = '';
+  }
+}
+
+function updateLog(logs) {
+  const panel = document.getElementById('logPanel');
+  panel.innerHTML = logs.map(l => {
+    const isErr = l.toLowerCase().includes('error');
+    const parts = l.match(/^(\[[^\]]+\])\s*(.*)$/);
+    if (parts) {
+      return `<div class="log-line${isErr? ' err':''}"><span class="ts">${parts[1]}</span> ${parts[2]}</div>`;
+    }
+    return `<div class="log-line${isErr? ' err':''}">${l}</div>`;
+  }).join('');
+  panel.scrollTop = panel.scrollHeight;
+}
+
+function updateStats() {
+  if (allResults.length === 0) return;
+  const peaks = allResults.map(r => r.peak_voltage);
+  const n = peaks.length;
+  // Avoid Math.max(...peaks) which can cause stack overflow on large arrays
+  let mean = 0, max = -Infinity, min = Infinity;
+  for (let i = 0; i < n; i++) {
+    mean += peaks[i];
+    if (peaks[i] > max) max = peaks[i];
+    if (peaks[i] < min) min = peaks[i];
+  }
+  mean /= n;
+  let variance = 0;
+  for (let i = 0; i < n; i++) variance += (peaks[i] - mean) ** 2;
+  const std = Math.sqrt(variance / n);
+
+  document.getElementById('statAcq').textContent = allResults.length;
+  document.getElementById('statMean').textContent = mean.toFixed(2);
+  document.getElementById('statMax').textContent = max.toFixed(2);
+  document.getElementById('statStd').textContent = std.toFixed(3);
+}
+
+// ======================================================================
+// Chart Rendering
+// ======================================================================
+const accentColor = '#00e5ff';
+const accent2Color = '#7c4dff';
+const gridColor = 'rgba(49,50,68,0.5)';
+
+function destroyCharts() {
+  if (waveformChart) { waveformChart.destroy(); waveformChart = null; }
+  if (peaksChart) { peaksChart.destroy(); peaksChart = null; }
+  if (overlayChart) { overlayChart.destroy(); overlayChart = null; }
+  if (histogramChart) { histogramChart.destroy(); histogramChart = null; }
+  if (fftChart) { fftChart.destroy(); fftChart = null; }
+  // Show empty states
+  ['waveformEmpty','peaksEmpty','overlayEmpty','histogramEmpty','fftEmpty'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = '';
+  });
+}
+
+function renderWaveform(idx, wf) {
+  // Accept wf directly (lazy load) or fall back to allWaveforms (live polling)
+  if (!wf) {
+    if (idx < 0 || idx >= allWaveforms.length) return;
+    wf = allWaveforms[idx];
+  }
+  document.getElementById('waveformEmpty').style.display = 'none';
+  document.getElementById('waveformSliderLabel').textContent = `#${wf.acquisition}`;
+
+  const ctx = document.getElementById('chartWaveform').getContext('2d');
+
+  if (waveformChart) {
+    waveformChart.data.labels = wf.timestamps;
+    waveformChart.data.datasets[0].data = wf.voltages;
+    waveformChart.options.plugins.title.text = `Acquisition ${wf.acquisition}`;
+    waveformChart.update('none');
+    return;
+  }
+
+  waveformChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: wf.timestamps,
+      datasets: [{
+        label: 'Voltage (V)',
+        data: wf.voltages,
+        borderColor: accentColor,
+        backgroundColor: 'rgba(0,229,255,0.05)',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        fill: true,
+        tension: 0.1,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        title: { display: true, text: `Acquisition ${wf.acquisition}`, color: '#cdd6f4', font: {size:13, weight:600} },
+        legend: { display: false },
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Time (ms)', color: '#6c7086' },
+          grid: { color: gridColor },
+          ticks: { maxTicksLimit: 10, callback: v => typeof v === 'number' ? v.toFixed(2) : v },
+        },
+        y: {
+          title: { display: true, text: 'Voltage (V)', color: '#6c7086' },
+          grid: { color: gridColor },
+        }
+      },
+      interaction: { intersect: false, mode: 'index' },
+    }
+  });
+}
+
+function renderPeaks() {
+  if (allResults.length === 0) return;
+  document.getElementById('peaksEmpty').style.display = 'none';
+
+  // Downsample for chart performance
+  const labels = downsampleArray(allResults.map(r => r.acquisition), MAX_CHART_POINTS);
+  const data = downsampleArray(allResults.map(r => r.peak_voltage), MAX_CHART_POINTS);
+  const mean = allResults.reduce((a,b) => a + b.peak_voltage, 0) / allResults.length;
+
+  const ctx = document.getElementById('chartPeaks').getContext('2d');
+
+  if (peaksChart) {
+    peaksChart.data.labels = labels;
+    peaksChart.data.datasets[0].data = data;
+    peaksChart.data.datasets[1].data = labels.map(() => mean);
+    peaksChart.options.plugins.title.text = `Peak Voltage per Acquisition (${allResults.length} total${allResults.length > MAX_CHART_POINTS ? ', downsampled' : ''})`;
+    peaksChart.update('none');
+    return;
+  }
+
+  peaksChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Peak Voltage (V)',
+          data: data,
+          borderColor: accentColor,
+          backgroundColor: 'rgba(0,229,255,0.1)',
+          borderWidth: 2,
+          pointRadius: data.length > 200 ? 0 : 4,
+          pointBackgroundColor: accentColor,
+          fill: data.length <= 500,
+          tension: data.length > 500 ? 0 : 0.2,
+        },
+        {
+          label: `Mean (${mean.toFixed(2)} V)`,
+          data: labels.map(() => mean),
+          borderColor: '#f38ba8',
+          borderWidth: 1.5,
+          borderDash: [6,4],
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        title: { display: true, text: `Peak Voltage per Acquisition (${allResults.length} total${allResults.length > MAX_CHART_POINTS ? ', downsampled' : ''})`, color: '#cdd6f4', font: {size:13, weight:600} },
+        legend: { labels: { usePointStyle: true, pointStyle: 'circle' } },
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Acquisition #', color: '#6c7086' },
+          grid: { color: gridColor },
+        },
+        y: {
+          title: { display: true, text: 'Peak Voltage (V)', color: '#6c7086' },
+          grid: { color: gridColor },
+          beginAtZero: true,
+        }
+      }
+    }
+  });
+}
+
+async function renderOverlay() {
+  if (allWaveforms.length === 0 && !currentExpName) return;
+  if (allResults.length === 0) return;
+  document.getElementById('overlayEmpty').style.display = 'none';
+
+  const limit = parseInt(document.getElementById('overlayLimit').value);
+  const showMean = document.getElementById('overlayShowMean').checked;
+  const normTime = document.getElementById('overlayNormTime').checked;
+
+  // Determine which acquisition numbers to show (capped at MAX_OVERLAY_WAVEFORMS)
+  let acqNums = allResults.map(r => r.acquisition);
+  const effectiveLimit = (limit > 0) ? Math.min(limit, MAX_OVERLAY_WAVEFORMS) : MAX_OVERLAY_WAVEFORMS;
+  if (acqNums.length > effectiveLimit) {
+    const step = Math.floor(acqNums.length / effectiveLimit);
+    acqNums = acqNums.filter((_, i) => i % step === 0).slice(0, effectiveLimit);
+  }
+
+  // Get waveform data: from allWaveforms (live) or lazy-fetch (past experiment)
+  let wfs;
+  if (allWaveforms.length > 0) {
+    // Live experiment mode – use existing data
+    wfs = allWaveforms;
+    if (wfs.length > effectiveLimit) {
+      const step = Math.floor(wfs.length / effectiveLimit);
+      wfs = wfs.filter((_, i) => i % step === 0).slice(0, effectiveLimit);
+    }
+  } else if (currentExpName) {
+    // Past experiment – lazy fetch needed waveforms
+    wfs = await fetchWaveformsBatch(acqNums);
+  } else {
+    return;
+  }
+
+  if (wfs.length === 0) return;
+
+  const showLegend = wfs.length <= 10;
+  const gradientLegend = document.getElementById('overlayGradientLegend');
+  const countLabel = document.getElementById('overlayCountLabel');
+  gradientLegend.style.display = showLegend ? 'none' : 'block';
+  countLabel.textContent = `${wfs.length} waveforms`;
+
+  // Generate colors using a gradient
+  const colors = wfs.map((_, i) => {
+    const t = wfs.length > 1 ? i / (wfs.length - 1) : 0;
+    const r = Math.round(0 + t * 124);
+    const g = Math.round(229 - t * 152);
+    const b = Math.round(255);
+    return `rgba(${r},${g},${b},${showMean ? 0.2 : 0.6})`;
+  });
+
+  const datasets = wfs.map((wf, i) => {
+    let xData = wf.timestamps;
+    if (normTime && xData.length > 1) {
+      const tMax = xData[xData.length - 1];
+      xData = xData.map(v => tMax > 0 ? v / tMax : v);
+    }
+    return {
+      label: `#${wf.acquisition}`,
+      data: xData.map((t, j) => ({x: t, y: wf.voltages[j]})),
+      borderColor: colors[i],
+      borderWidth: showMean ? 0.8 : 1.2,
+      pointRadius: 0,
+      fill: false,
+      tension: 0.1,
+    };
+  });
+
+  // Compute and add mean ± std envelope
+  if (showMean && wfs.length >= 2) {
+    // Resample all waveforms to a common time grid
+    const nPts = 500;
+    let tMin = Infinity, tMax = -Infinity;
+    for (const wf of wfs) {
+      const ts = normTime && wf.timestamps.length > 1
+        ? wf.timestamps.map(v => v / wf.timestamps[wf.timestamps.length-1])
+        : wf.timestamps;
+      if (ts[0] < tMin) tMin = ts[0];
+      if (ts[ts.length - 1] > tMax) tMax = ts[ts.length - 1];
+    }
+    const tGrid = Array.from({length: nPts}, (_, i) => tMin + (tMax - tMin) * i / (nPts - 1));
+    const allVals = tGrid.map(() => []);
+
+    for (const wf of wfs) {
+      const ts = normTime && wf.timestamps.length > 1
+        ? wf.timestamps.map(v => v / wf.timestamps[wf.timestamps.length-1])
+        : wf.timestamps;
+      for (let gi = 0; gi < nPts; gi++) {
+        const tv = tGrid[gi];
+        // Find surrounding indices via binary search
+        let lo = 0, hi = ts.length - 1;
+        while (lo < hi - 1) {
+          const mid = (lo + hi) >> 1;
+          if (ts[mid] <= tv) lo = mid; else hi = mid;
+        }
+        if (hi === lo || ts[hi] === ts[lo]) {
+          allVals[gi].push(wf.voltages[lo]);
+        } else {
+          const frac = (tv - ts[lo]) / (ts[hi] - ts[lo]);
+          allVals[gi].push(wf.voltages[lo] + frac * (wf.voltages[hi] - wf.voltages[lo]));
+        }
+      }
+    }
+
+    const meanVals = allVals.map(v => v.reduce((a,b) => a+b, 0) / v.length);
+    const stdVals = allVals.map((v, i) => {
+      const m = meanVals[i];
+      return Math.sqrt(v.reduce((s, x) => s + (x - m) ** 2, 0) / v.length);
+    });
+    const upperVals = meanVals.map((m, i) => m + stdVals[i]);
+    const lowerVals = meanVals.map((m, i) => m - stdVals[i]);
+
+    // Upper bound (for fill between)
+    datasets.push({
+      label: 'Mean + Std',
+      data: tGrid.map((t, i) => ({x: t, y: upperVals[i]})),
+      borderColor: 'rgba(166,227,161,0.5)',
+      borderWidth: 1,
+      borderDash: [3, 3],
+      pointRadius: 0,
+      fill: false,
+      tension: 0.2,
+    });
+    // Lower bound
+    datasets.push({
+      label: 'Mean - Std',
+      data: tGrid.map((t, i) => ({x: t, y: lowerVals[i]})),
+      borderColor: 'rgba(166,227,161,0.5)',
+      borderWidth: 1,
+      borderDash: [3, 3],
+      pointRadius: 0,
+      fill: '-1',
+      backgroundColor: 'rgba(166,227,161,0.08)',
+      tension: 0.2,
+    });
+    // Mean line
+    datasets.push({
+      label: 'Mean',
+      data: tGrid.map((t, i) => ({x: t, y: meanVals[i]})),
+      borderColor: '#a6e3a1',
+      borderWidth: 2.5,
+      pointRadius: 0,
+      fill: false,
+      tension: 0.2,
+    });
+  }
+
+  const xLabel = normTime ? 'Normalized Time' : 'Time (ms)';
+  const titleText = showMean
+    ? `Mean ± Std (${wfs.length} waveforms)`
+    : `Waveform Overlay (${wfs.length} shown)`;
+
+  const ctx = document.getElementById('chartOverlay').getContext('2d');
+
+  if (overlayChart) {
+    overlayChart.data.datasets = datasets;
+    overlayChart.options.plugins.title.text = titleText;
+    overlayChart.options.scales.x.title.text = xLabel;
+    overlayChart.options.plugins.legend.display = showLegend;
+    overlayChart.update('none');
+    return;
+  }
+
+  overlayChart = new Chart(ctx, {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      showLine: true,
+      plugins: {
+        title: { display: true, text: titleText, color: '#cdd6f4', font: {size:13, weight:600} },
+        legend: {
+          display: showLegend,
+          labels: { usePointStyle: true, pointStyle: 'line', font: {size: 10},
+                    filter: (item) => !item.text.startsWith('Mean') || item.text === 'Mean' }
+        },
+        tooltip: { enabled: true, mode: 'nearest', intersect: false },
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          title: { display: true, text: xLabel, color: '#6c7086' },
+          grid: { color: gridColor },
+        },
+        y: {
+          title: { display: true, text: 'Voltage (V)', color: '#6c7086' },
+          grid: { color: gridColor },
+        }
+      }
+    }
+  });
+}
+
+// Waveform slider – uses viewableAcqs for past experiments, direct array for live
+document.getElementById('waveformSlider').addEventListener('input', async function() {
+  const idx = parseInt(this.value);
+  if (currentExpName && viewableAcqs.length > 0) {
+    const acqNum = viewableAcqs[idx];
+    if (!acqNum) return;
+    if (waveformCache[acqNum]) {
+      renderWaveform(idx, waveformCache[acqNum]);
+      document.getElementById('waveformSliderLabel').textContent = `#${acqNum}`;
+    } else {
+      document.getElementById('waveformSliderLabel').textContent = `#${acqNum} …`;
+      try {
+        const resp = await fetch(`/api/experiment/${currentExpName}/waveform/${acqNum}`);
+        const wf = await resp.json();
+        if (!wf.error) {
+          waveformCache[acqNum] = wf;
+          renderWaveform(idx, wf);
+          document.getElementById('waveformSliderLabel').textContent = `#${acqNum}`;
+        }
+      } catch(e) { console.error(e); }
+    }
+  } else {
+    renderWaveform(idx);
+  }
+});
+
+// ======================================================================
+// Histogram of Peak Voltages
+// ======================================================================
+function renderHistogram() {
+  if (allResults.length < 2) return;
+  document.getElementById('histogramEmpty').style.display = 'none';
+
+  const peaks = allResults.map(r => r.peak_voltage);
+  const nBins = Math.min(Math.max(5, Math.ceil(Math.sqrt(peaks.length))), 50);
+  // Safe min/max for large arrays (no spread operator)
+  let min = Infinity, max = -Infinity;
+  for (const v of peaks) { if (v < min) min = v; if (v > max) max = v; }
+  const range = max - min || 1;
+  const binWidth = range / nBins;
+
+  const bins = Array(nBins).fill(0);
+  const binLabels = [];
+  for (let i = 0; i < nBins; i++) {
+    binLabels.push((min + binWidth * (i + 0.5)).toFixed(2));
+  }
+  for (const v of peaks) {
+    let idx = Math.floor((v - min) / binWidth);
+    if (idx >= nBins) idx = nBins - 1;
+    bins[idx]++;
+  }
+
+  const ctx = document.getElementById('chartHistogram').getContext('2d');
+
+  if (histogramChart) {
+    histogramChart.data.labels = binLabels;
+    histogramChart.data.datasets[0].data = bins;
+    histogramChart.update('none');
+    return;
+  }
+
+  histogramChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: binLabels,
+      datasets: [{
+        label: 'Count',
+        data: bins,
+        backgroundColor: 'rgba(0,229,255,0.4)',
+        borderColor: 'rgba(0,229,255,0.8)',
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        title: { display: true, text: 'Peak Voltage Distribution', color: '#cdd6f4', font: {size: 13, weight: 600} },
+        legend: { display: false },
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Peak Voltage (V)', color: '#6c7086' },
+          grid: { color: gridColor },
+        },
+        y: {
+          title: { display: true, text: 'Count', color: '#6c7086' },
+          grid: { color: gridColor },
+          beginAtZero: true,
+          ticks: { stepSize: 1 },
+        }
+      }
+    }
+  });
+}
+
+// ======================================================================
+// FFT of selected waveform
+// ======================================================================
+function computeFFT(signal) {
+  // Simple DFT magnitude (real-valued input) - we use a basic implementation
+  // since we're working with down-sampled data (~2000 points)
+  const N = signal.length;
+  const half = Math.floor(N / 2);
+  const magnitudes = new Array(half);
+  for (let k = 0; k < half; k++) {
+    let re = 0, im = 0;
+    for (let n = 0; n < N; n++) {
+      const angle = -2 * Math.PI * k * n / N;
+      re += signal[n] * Math.cos(angle);
+      im += signal[n] * Math.sin(angle);
+    }
+    magnitudes[k] = Math.sqrt(re * re + im * im) / N;
+  }
+  return magnitudes;
+}
+
+async function renderFFT() {
+  if (allWaveforms.length === 0 && !currentExpName) return;
+  if (allResults.length === 0 && allWaveforms.length === 0) return;
+  document.getElementById('fftEmpty').style.display = 'none';
+
+  const sel = document.getElementById('fftSelect');
+  let idx = parseInt(sel.value);
+
+  // Get waveform data
+  let wf;
+  if (allWaveforms.length > 0) {
+    // Live experiment
+    if (idx < 0 || idx >= allWaveforms.length) idx = allWaveforms.length - 1;
+    wf = allWaveforms[idx];
+  } else if (currentExpName && viewableAcqs.length > 0) {
+    // Past experiment – use viewableAcqs
+    if (idx < 0 || idx >= viewableAcqs.length) idx = viewableAcqs.length - 1;
+    const acqNum = viewableAcqs[idx];
+    if (waveformCache[acqNum]) {
+      wf = waveformCache[acqNum];
+    } else {
+      try {
+        const resp = await fetch(`/api/experiment/${currentExpName}/waveform/${acqNum}`);
+        wf = await resp.json();
+        if (!wf.error) waveformCache[acqNum] = wf;
+        else wf = null;
+      } catch(e) { wf = null; }
+    }
+  }
+  if (!wf) return;
+
+  const voltages = wf.voltages;
+  const timestamps = wf.timestamps;
+
+  // Compute sampling frequency from timestamps
+  const dt = timestamps.length > 1 ? (timestamps[timestamps.length - 1] - timestamps[0]) / (timestamps.length - 1) : 1;
+  const fs = 1.0 / dt; // in kHz (timestamps in ms)
+
+  const mag = computeFFT(voltages);
+  const freqs = mag.map((_, i) => (i * fs / voltages.length)); // kHz
+
+  // Skip DC component (index 0), show up to Nyquist
+  const freqData = freqs.slice(1);
+  const magData = mag.slice(1);
+
+  const ctx = document.getElementById('chartFFT').getContext('2d');
+
+  if (fftChart) {
+    fftChart.data.datasets[0].data = freqData.map((f, i) => ({x: f, y: magData[i]}));
+    fftChart.options.plugins.title.text = `FFT – Acquisition #${wf.acquisition}`;
+    fftChart.update('none');
+    return;
+  }
+
+  fftChart = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+      datasets: [{
+        label: 'Magnitude',
+        data: freqData.map((f, i) => ({x: f, y: magData[i]})),
+        borderColor: accent2Color,
+        backgroundColor: 'rgba(124,77,255,0.1)',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        fill: true,
+        showLine: true,
+        tension: 0.1,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        title: { display: true, text: `FFT – Acquisition #${wf.acquisition}`, color: '#cdd6f4', font: {size: 13, weight: 600} },
+        legend: { display: false },
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          title: { display: true, text: 'Frequency (kHz)', color: '#6c7086' },
+          grid: { color: gridColor },
+        },
+        y: {
+          title: { display: true, text: 'Magnitude', color: '#6c7086' },
+          grid: { color: gridColor },
+          beginAtZero: true,
+        }
+      }
+    }
+  });
+}
+
+function updateFFTSelect() {
+  const sel = document.getElementById('fftSelect');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="-1">Latest</option>';
+  // Use viewableAcqs for past experiments, allWaveforms for live
+  const items = viewableAcqs.length > 0 ? viewableAcqs : (allWaveforms.length > 0 ? allWaveforms.map(w => w.acquisition) : []);
+  items.forEach((acq, i) => {
+    sel.innerHTML += `<option value="${i}">#${acq}</option>`;
+  });
+  sel.value = prev;
+}
+
+// ======================================================================
+// Detailed Statistics Table
+// ======================================================================
+function renderStatsTable() {
+  const tbody = document.getElementById('statsTableBody');
+  if (allResults.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Load an experiment to see statistics</td></tr>';
+    return;
+  }
+
+  const peaks = allResults.map(r => r.peak_voltage);
+  const n = peaks.length;
+  let mean = 0, max = -Infinity, min = Infinity;
+  for (let i = 0; i < n; i++) {
+    mean += peaks[i];
+    if (peaks[i] > max) max = peaks[i];
+    if (peaks[i] < min) min = peaks[i];
+  }
+  mean /= n;
+  let variance = 0;
+  for (let i = 0; i < n; i++) variance += (peaks[i] - mean) ** 2;
+  const std = Math.sqrt(variance / n);
+  const sorted = [...peaks].sort((a, b) => a - b);
+  const median = sorted[Math.floor(n / 2)];
+  const cv = mean !== 0 ? (std / mean * 100) : 0;
+  const p5 = sorted[Math.floor(n * 0.05)];
+  const p95 = sorted[Math.floor(n * 0.95)];
+
+  const rows = [
+    ['Acquisitions', n, 'Peak Mean (V)', mean.toFixed(4)],
+    ['Peak Max (V)', max.toFixed(4), 'Peak Min (V)', min.toFixed(4)],
+    ['Peak Std Dev (V)', std.toFixed(4), 'Peak Median (V)', median.toFixed(4)],
+    ['Coeff. of Variation', cv.toFixed(1) + '%', 'P5 / P95 (V)', `${p5.toFixed(3)} / ${p95.toFixed(3)}`],
+  ];
+
+  tbody.innerHTML = rows.map(r =>
+    `<tr><td style="color:var(--text-dim)">${r[0]}</td><td><strong>${r[1]}</strong></td><td style="color:var(--text-dim)">${r[2]}</td><td><strong>${r[3]}</strong></td></tr>`
+  ).join('');
+}
+
+// ======================================================================
+// Past Experiments
+// ======================================================================
+async function loadExperiments() {
+  try {
+    const resp = await fetch('/api/experiments');
+    const exps = await resp.json();
+    const list = document.getElementById('expList');
+
+    if (exps.length === 0) {
+      list.innerHTML = '<div class="text-center text-muted py-3" style="font-size:0.82rem">No experiments yet</div>';
+      return;
+    }
+
+    list.innerHTML = exps.map(e => `
+      <div class="exp-item mb-1" onclick="loadPastExperiment('${e.name}', this)">
+        <div class="d-flex justify-content-between align-items-center">
+          <strong style="font-size:0.82rem">${e.name}</strong>
+          <span class="badge" style="background:rgba(0,229,255,0.15); color:var(--accent); font-size:0.7rem">${e.n_files} acq</span>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    console.error('Failed to load experiments:', e);
+  }
+}
+
+async function loadPastExperiment(name, el) {
+  // Highlight selected
+  document.querySelectorAll('.exp-item').forEach(e => e.classList.remove('active'));
+  if (el) el.classList.add('active');
+
+  try {
+    const resp = await fetch(`/api/experiment/${name}`);
+    const data = await resp.json();
+    if (data.error) { alert(data.error); return; }
+
+    // Store experiment context
+    currentExpName = name;
+    allWaveforms = [];
+    waveformCache = {};
+    allResults = data.peaks || [];
+    nWaveformsTotal = data.n_waveforms || allResults.length;
+
+    destroyCharts();
+
+    document.getElementById('statsRow').style.display = '';
+    document.getElementById('progressCard').style.display = '';
+
+    // Update status badge
+    const badge = document.getElementById('statusBadge');
+    const label = document.getElementById('statusLabel');
+    const dot = document.getElementById('statusDot');
+
+    // Handle cache building state
+    if (data.cache_status === 'building') {
+      badge.className = 'status-badge status-running';
+      label.textContent = `Indexing: ${name}`;
+      dot.innerHTML = '<div class="spinner-dot"></div>';
+
+      document.getElementById('progressBar').style.width = (data.cache_progress || 0) + '%';
+      document.getElementById('progressPct').textContent = (data.cache_progress || 0) + '%';
+      document.getElementById('progressText').textContent =
+        `Indexing ${nWaveformsTotal} files… (${data.n_indexed || 0} done)`;
+
+      // Poll until cache is done (no chart rendering during build)
+      _pollCacheStatus(name);
+      return;
+    }
+
+    // Cache is done – render everything
+    badge.className = 'status-badge status-complete';
+    label.textContent = `Viewing: ${name}`;
+    dot.innerHTML = '<i class="bi bi-folder2-open"></i>';
+    document.getElementById('progressCard').style.display = 'none';
+
+    updateStats();
+    buildViewableAcqs();
+
+    if (allResults.length > 0) {
+      renderPeaks();
+      renderHistogram();
+      renderStatsTable();
+    }
+
+    if (viewableAcqs.length > 0) {
+      const slider = document.getElementById('waveformSlider');
+      slider.max = viewableAcqs.length - 1;
+      slider.value = 0;
+      slider.disabled = false;
+      document.getElementById('waveformSliderLabel').textContent =
+        `#${viewableAcqs[0]} (${viewableAcqs.length} of ${nWaveformsTotal})`;
+      updateFFTSelect();
+      // Load first waveform
+      try {
+        const resp = await fetch(`/api/experiment/${name}/waveform/${viewableAcqs[0]}`);
+        const wf = await resp.json();
+        if (!wf.error) {
+          waveformCache[wf.acquisition] = wf;
+          renderWaveform(0, wf);
+          document.getElementById('waveformSliderLabel').textContent = `#${wf.acquisition}`;
+        }
+      } catch(e) { console.error(e); }
+    }
+
+  } catch (e) {
+    alert('Failed to load experiment: ' + e.message);
+  }
+}
+
+let _cachePollTimer = null;
+
+function _pollCacheStatus(name) {
+  if (_cachePollTimer) clearInterval(_cachePollTimer);
+  _cachePollTimer = setInterval(async () => {
+    try {
+      const resp = await fetch(`/api/experiment/${name}`);
+      const data = await resp.json();
+
+      if (data.cache_status === 'building') {
+        // Lightweight update: ONLY progress bar + text, no chart rendering
+        const pct = data.cache_progress || 0;
+        const nIndexed = data.n_indexed || 0;
+        document.getElementById('progressBar').style.width = pct + '%';
+        document.getElementById('progressPct').textContent = pct + '%';
+        document.getElementById('progressText').textContent =
+          `Indexing ${data.n_waveforms || nWaveformsTotal} files… (${nIndexed} done)`;
+
+        // Update stats text only (cheap), skip chart rendering during build
+        if (data.peaks && data.peaks.length > 0) {
+          allResults = data.peaks;
+          updateStats();
+        }
+        return; // wait for next interval
+      }
+
+      if (data.cache_status === 'done') {
+        clearInterval(_cachePollTimer);
+        _cachePollTimer = null;
+
+        // Full render once when done
+        allResults = data.peaks || [];
+        nWaveformsTotal = data.n_waveforms || allResults.length;
+        updateStats();
+        buildViewableAcqs();
+        renderPeaks();
+        renderHistogram();
+        renderStatsTable();
+
+        const badge = document.getElementById('statusBadge');
+        const label = document.getElementById('statusLabel');
+        const dot = document.getElementById('statusDot');
+        badge.className = 'status-badge status-complete';
+        label.textContent = `Viewing: ${name}`;
+        dot.innerHTML = '<i class="bi bi-folder2-open"></i>';
+        document.getElementById('progressCard').style.display = 'none';
+
+        if (viewableAcqs.length > 0) {
+          const slider = document.getElementById('waveformSlider');
+          slider.max = viewableAcqs.length - 1;
+          slider.value = 0;
+          slider.disabled = false;
+          document.getElementById('waveformSliderLabel').textContent =
+            `#${viewableAcqs[0]} (${viewableAcqs.length} of ${nWaveformsTotal})`;
+          updateFFTSelect();
+          try {
+            const resp = await fetch(`/api/experiment/${name}/waveform/${viewableAcqs[0]}`);
+            const wf = await resp.json();
+            if (!wf.error) {
+              waveformCache[wf.acquisition] = wf;
+              renderWaveform(0, wf);
+              document.getElementById('waveformSliderLabel').textContent = `#${wf.acquisition}`;
+            }
+          } catch(e) { console.error(e); }
+        }
+      }
+    } catch (e) {
+      console.error('Cache poll error:', e);
+    }
+  }, 3000);
+}
+
+/**
+ * Lazily fetch a single waveform by slider index, using cache.
+ */
+async function fetchWaveform(idx) {
+  if (!currentExpName || idx < 0 || idx >= allResults.length) return null;
+  const acqNum = allResults[idx].acquisition;
+  if (waveformCache[acqNum]) return waveformCache[acqNum];
+
+  try {
+    const resp = await fetch(`/api/experiment/${currentExpName}/waveform/${acqNum}`);
+    const wf = await resp.json();
+    if (wf.error) return null;
+    waveformCache[acqNum] = wf;
+    return wf;
+  } catch (e) {
+    console.error('Failed to fetch waveform:', e);
+    return null;
+  }
+}
+
+/**
+ * Fetch multiple waveforms in one batch request (capped at MAX_OVERLAY_WAVEFORMS).
+ */
+async function fetchWaveformsBatch(acqNums) {
+  if (!currentExpName || acqNums.length === 0) return [];
+  // Cap at MAX_OVERLAY_WAVEFORMS to prevent server overload
+  acqNums = acqNums.slice(0, MAX_OVERLAY_WAVEFORMS);
+  // Filter out cached ones
+  const needed = acqNums.filter(n => !waveformCache[n]);
+  if (needed.length > 0) {
+    try {
+      const ids = needed.join(',');
+      const resp = await fetch(`/api/experiment/${currentExpName}/waveforms?ids=${ids}`);
+      const wfs = await resp.json();
+      for (const wf of wfs) {
+        waveformCache[wf.acquisition] = wf;
+      }
+    } catch (e) {
+      console.error('Failed to fetch waveforms batch:', e);
+    }
+  }
+  return acqNums.map(n => waveformCache[n]).filter(Boolean);
+}
+
+/**
+ * Fetch a small batch of waveforms (max 10) for quick inspection.
+ */
+async function fetchAllWaveforms() {
+  if (!currentExpName) return [];
+  // Only fetch first 10 waveforms instead of all to prevent crash
+  const acqNums = allResults.slice(0, 10).map(r => r.acquisition);
+  return await fetchWaveformsBatch(acqNums);
+}
+
+async function loadAndShowWaveform(idx) {
+  const wf = await fetchWaveform(idx);
+  if (wf) {
+    document.getElementById('waveformSliderLabel').textContent = `#${wf.acquisition}`;
+    renderWaveform(idx, wf);
+  }
+}
+
+// ======================================================================
+// Init
+// ======================================================================
+loadExperiments();
+</script>
+</body>
+</html>

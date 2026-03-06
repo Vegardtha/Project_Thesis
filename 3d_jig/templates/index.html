@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
 <title>Prusa CPR Controller</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg-primary: #f8f9fa;
@@ -262,21 +262,20 @@ body {
       <!-- Printer Connection -->
       <div class="card">
         <div class="card-header">Printer Connection</div>
-        <div class="card-body">
-          <div class="status-indicator" id="printerStatus">
-            <span class="status-dot status-disconnected"></span>
-            <span id="printerStatusText">Disconnected</span>
+        <div class="card-body" style="padding:0.75rem;">
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <div class="status-indicator mb-0 py-1 px-2" id="printerStatus" style="flex:1;">
+              <span class="status-dot status-disconnected"></span>
+              <span id="printerStatusText" style="font-size:0.8rem;">Disconnected</span>
+            </div>
+            <span class="text-secondary" style="font-size:0.75rem;"><span id="printerPort">(auto)</span></span>
           </div>
-          <div class="port-info">
-            Port: <span id="printerPort">(auto)</span>
-          </div>
-          <label class="form-label">Baud Rate</label>
-          <select id="printerBaud" class="form-select form-select-sm mb-3">
-            <option value="115200" selected>115200</option>
-            <option value="250000">250000</option>
-          </select>
-          <div class="d-grid gap-2">
-            <button id="btnPrinterConnect" class="btn btn-sm btn-success">Connect Printer</button>
+          <div class="d-flex gap-2 align-items-center mt-1">
+            <select id="printerBaud" class="form-select form-select-sm" style="width:auto;">
+              <option value="115200" selected>115200</option>
+              <option value="250000">250000</option>
+            </select>
+            <button id="btnPrinterConnect" class="btn btn-sm btn-success">Connect</button>
             <button id="btnPrinterDisconnect" class="btn btn-sm btn-secondary" style="display:none">Disconnect</button>
           </div>
         </div>
@@ -285,53 +284,100 @@ body {
       <!-- LoadCell Connection -->
       <div class="card">
         <div class="card-header">Load Cell Sensor</div>
+        <div class="card-body" style="padding:0.75rem;">
+          <div class="d-flex align-items-center gap-2">
+            <div class="status-indicator mb-0 py-1 px-2" id="loadcellStatus" style="flex:1;">
+              <span class="status-dot status-disconnected"></span>
+              <span id="loadcellStatusText" style="font-size:0.8rem;">Disconnected</span>
+            </div>
+            <button id="btnTare" class="btn btn-sm btn-outline-light">Tare</button>
+          </div>
+          <div class="force-display" id="forceDisplay" style="font-size:1.75rem;padding:0.75rem 1rem;margin-top:0.6rem;">-- kg</div>
+        </div>
+      </div>
+
+      <!-- ESP / IMU Connection -->
+      <div class="card">
+        <div class="card-header">ESP / IMU Sensors</div>
+        <div class="card-body" style="padding:0.75rem;">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <div class="status-indicator mb-0 py-1 px-2" id="espStatus" style="flex:1;">
+              <span class="status-dot status-disconnected"></span>
+              <span id="espStatusText" style="font-size:0.8rem;">Disconnected</span>
+            </div>
+            <span class="text-secondary" style="font-size:0.75rem;" id="espPort"></span>
+          </div>
+          <div id="imuReadings" style="font-size:0.75rem;font-family:'SF Mono',Monaco,'Courier New',monospace;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;padding:0.5rem;max-height:120px;overflow-y:auto;"></div>
+          <div class="d-flex align-items-center gap-2 mt-2">
+            <span id="imuRecStatus" class="text-secondary" style="font-size:0.75rem;"></span>
+            <button id="btnDownloadImuCsv" class="btn btn-sm btn-outline-light ms-auto" style="display:none">&#x2193; Download IMU CSV</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Position Display -->
+      <div class="card">
+        <div class="card-header">Position (relative to center)</div>
         <div class="card-body">
-          <div class="status-indicator" id="loadcellStatus">
-            <span class="status-dot status-disconnected"></span>
-            <span id="loadcellStatusText">Disconnected</span>
+          <div class="d-flex justify-content-between" style="font-variant-numeric:tabular-nums;">
+            <div class="text-center" style="flex:1;">
+              <div class="text-secondary" style="font-size:0.75rem;">X</div>
+              <div id="posX" style="font-size:1.5rem;font-weight:600;">--</div>
+            </div>
+            <div class="text-center" style="flex:1;">
+              <div class="text-secondary" style="font-size:0.75rem;">Y</div>
+              <div id="posY" style="font-size:1.5rem;font-weight:600;">--</div>
+            </div>
+            <div class="text-center" style="flex:1;">
+              <div class="text-secondary" style="font-size:0.75rem;">Z</div>
+              <div id="posZ" style="font-size:1.5rem;font-weight:600;">--</div>
+            </div>
           </div>
-          <div class="port-info">
-            Port: <span id="loadcellPort">(auto)</span>
-          </div>
-          <label class="form-label">Baud Rate</label>
-          <select id="loadcellBaud" class="form-select form-select-sm mb-3">
-            <option value="9600" selected>9600</option>
-            <option value="115200">115200</option>
-          </select>
-          <div class="d-grid gap-2 mb-3">
-            <button id="btnLoadcellConnect" class="btn btn-sm btn-success">Connect LoadCell</button>
-            <button id="btnLoadcellDisconnect" class="btn btn-sm btn-secondary" style="display:none">Disconnect</button>
-            <button id="btnTare" class="btn btn-sm btn-outline-light">Tare (Zero)</button>
-          </div>
-          
-          <div class="force-display" id="forceDisplay">0.0 kg</div>
         </div>
       </div>
     </div>
 
     <!-- Middle Column: CPR Control & Motion -->
     <div class="col-xl-5 col-lg-4">
-      <!-- Multi-Round CPR Cycles -->
+      <!-- Coordinate Sequence -->
       <div class="card">
-        <div class="card-header">CPR Cycle Configuration</div>
+        <div class="card-header">Coordinate Sequence</div>
         <div class="card-body">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">Target Force (kg)</label>
-              <input id="multiRoundForce" type="number" class="form-control" step="0.1" value="2.0" min="0.1" max="10">
+          <label class="form-label">Press Coordinates (mm offset from center)</label>
+          <div class="d-flex gap-2 mb-1" style="font-size:0.7rem;padding-left:28px;">
+            <span style="width:80px" class="text-secondary">X offset</span>
+            <span style="width:80px" class="text-secondary">Y offset</span>
+            <span style="width:80px" class="text-secondary">Max depth Z (mm)</span>
+          </div>
+          <div id="coordList" style="max-height:180px;overflow-y:auto;"></div>
+          <div class="d-flex gap-2 mt-2 flex-wrap">
+            <button id="btnAddCoord" class="btn btn-sm btn-outline-light">+ Add Point</button>
+            <button id="btnClearCoords" class="btn btn-sm btn-outline-light">Clear All</button>
+            <button id="btnUploadCsv" class="btn btn-sm btn-outline-light">&#x2191; Upload CSV</button>
+            <button id="btnDownloadCsv" class="btn btn-sm btn-outline-light">&#x2193; Download CSV</button>
+            <input type="file" id="csvFileInput" accept=".csv" style="display:none">
+          </div>
+
+          <div class="section-divider"></div>
+
+          <div class="mb-3">
+            <label class="form-label">Target Force (kg)</label>
+            <input id="coordTargetForce" type="number" class="form-control" step="0.1" value="2.0" min="0.1" max="10">
+          </div>
+
+          <div id="seqProgress" style="display:none;" class="mb-3">
+            <div class="d-flex justify-content-between mb-1">
+              <small class="text-secondary" id="seqMessage">Waiting...</small>
+              <small class="text-secondary" id="seqPercent">0%</small>
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Number of Rounds</label>
-              <input id="numRounds" type="number" class="form-control" step="1" value="5" min="1" max="100">
+            <div class="progress" style="height:6px;">
+              <div class="progress-bar" id="seqProgressBar" style="width:0%"></div>
             </div>
-            <div class="col-12">
-              <label class="form-label">Pause Between Rounds (sec)</label>
-              <input id="pauseBetweenRounds" type="number" class="form-control" step="0.1" value="0.5" min="0" max="5">
-            </div>
-            <div class="col-12">
-              <div class="section-divider"></div>
-              <button id="btnMultiRoundPush" class="btn btn-success w-100">Start Multi-Round Push</button>
-            </div>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button id="btnStartSequence" class="btn btn-success">Start Coordinate Sequence</button>
+            <button id="btnAbortSequence" class="btn btn-danger" style="display:none">Abort Sequence</button>
           </div>
         </div>
       </div>
@@ -369,14 +415,38 @@ body {
       </div>
     </div>
   </div>
+
+  <!-- Bed Map -->
+  <div class="row g-4 mt-2">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Bed Map &mdash; click to add point, right-click to remove</span>
+          <span id="bedMapCursor" style="font-size:0.8rem;color:var(--text-secondary);font-variant-numeric:tabular-nums;min-width:200px;text-align:right;"></span>
+        </div>
+        <div class="card-body d-flex justify-content-center p-3">
+          <svg id="bedMap" viewBox="0 0 500 430" style="width:100%;max-width:660px;cursor:crosshair;user-select:none;display:block;" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // Utility functions
 function showToast(msg, type='info'){
-  const color = type==='error' ? 'danger' : type==='success' ? 'success' : 'info';
-  alert(msg); // Simple for now, could use Bootstrap toast
+  const existing = document.getElementById('cpToast');
+  if (existing) existing.remove();
+  const bg = type==='error' ? '#dc3545' : type==='success' ? '#28a745' : '#0d6efd';
+  const t = document.createElement('div');
+  t.id = 'cpToast';
+  t.style.cssText = `position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;background:${bg};color:white;` +
+    `padding:.75rem 1.25rem;border-radius:6px;font-size:.875rem;max-width:420px;white-space:pre-wrap;` +
+    `box-shadow:0 4px 16px rgba(0,0,0,.18);transition:opacity .4s;`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 400); }, 4000);
 }
 
 async function postJSON(url, data){
@@ -408,18 +478,6 @@ function setPrinterConnected(connected, port='(auto)'){
   portEl.textContent = port;
 }
 
-function setLoadcellConnected(connected, port='(auto)'){
-  const dot = document.querySelector('#loadcellStatus .status-dot');
-  const txt = document.getElementById('loadcellStatusText');
-  const portEl = document.getElementById('loadcellPort');
-  
-  document.getElementById('btnLoadcellConnect').style.display = connected ? 'none' : 'block';
-  document.getElementById('btnLoadcellDisconnect').style.display = connected ? 'block' : 'none';
-  dot.className = 'status-dot ' + (connected ? 'status-connected' : 'status-disconnected');
-  txt.textContent = connected ? 'Connected' : 'Disconnected';
-  portEl.textContent = port;
-}
-
 // Printer connection
 document.getElementById('btnPrinterConnect').onclick = async () => {
   const baud = document.getElementById('printerBaud').value;
@@ -442,30 +500,6 @@ document.getElementById('btnPrinterDisconnect').onclick = async () => {
   }
 };
 
-// LoadCell connection
-document.getElementById('btnLoadcellConnect').onclick = async () => {
-  const baud = document.getElementById('loadcellBaud').value;
-  try {
-    const result = await postJSON('/api/loadcell/connect', {baud});
-    setLoadcellConnected(true, result.port);
-    showToast('LoadCell connected @ ' + baud, 'success');
-    startForceMonitoring();
-  } catch(e) {
-    showToast('LoadCell error: ' + e.message, 'error');
-  }
-};
-
-document.getElementById('btnLoadcellDisconnect').onclick = async () => {
-  try {
-    await postJSON('/api/loadcell/disconnect');
-    setLoadcellConnected(false);
-    stopForceMonitoring();
-    showToast('LoadCell disconnected', 'success');
-  } catch(e) {
-    showToast('Error: ' + e.message, 'error');
-  }
-};
-
 document.getElementById('btnTare').onclick = async () => {
   try {
     await postJSON('/api/loadcell/tare');
@@ -483,13 +517,19 @@ function startForceMonitoring(){
   forceMonitorInterval = setInterval(async () => {
     try {
       const result = await getJSON('/api/loadcell/weight');
-      if (result.ok) {
-        document.getElementById('forceDisplay').textContent = result.weight_kg.toFixed(2) + ' kg';
+      const dot = document.querySelector('#loadcellStatus .status-dot');
+      const txt = document.getElementById('loadcellStatusText');
+      if (result.connected) {
+        dot.className = 'status-dot status-connected';
+        txt.textContent = 'Connected';
+        document.getElementById('forceDisplay').textContent = result.weight_kg.toFixed(3) + ' kg';
+      } else {
+        dot.className = 'status-dot status-disconnected';
+        txt.textContent = 'Disconnected';
+        document.getElementById('forceDisplay').textContent = '-- kg';
       }
-    } catch(e) {
-      // Ignore errors during monitoring
-    }
-  }, 500); // Update every 500ms
+    } catch(e) { /* ignore */ }
+  }, 500);
 }
 
 function stopForceMonitoring(){
@@ -497,52 +537,8 @@ function stopForceMonitoring(){
     clearInterval(forceMonitorInterval);
     forceMonitorInterval = null;
   }
-  document.getElementById('forceDisplay').textContent = '0.0 kg';
+  document.getElementById('forceDisplay').textContent = '-- kg';
 }
-
-// Multi-round force control
-document.getElementById('btnMultiRoundPush').onclick = async () => {
-  const target_kg = parseFloat(document.getElementById('multiRoundForce').value);
-  const num_rounds = parseInt(document.getElementById('numRounds').value);
-  const pause_between_rounds = parseFloat(document.getElementById('pauseBetweenRounds').value);
-  const max_depth_mm = 150; // Safety limit
-  
-  if (num_rounds < 1 || num_rounds > 100) {
-    showToast('Number of rounds must be between 1 and 100', 'error');
-    return;
-  }
-  
-  const btn = document.getElementById('btnMultiRoundPush');
-  
-  try {
-    // Disable button during operation
-    btn.disabled = true;
-    btn.textContent = 'Running...';
-    
-    const result = await postJSON('/api/force/push_multiple', {
-      target_kg, 
-      num_rounds, 
-      max_depth_mm,
-      pause_between_rounds
-    });
-    
-    if (result.success) {
-      showToast(`Successfully completed ${result.total_rounds} rounds!`, 'success');
-    } else {
-      showToast(`Completed ${result.successful_rounds}/${result.total_rounds} rounds`, 'error');
-    }
-    
-    // Show detailed results in console
-    console.table(result.round_results);
-    
-  } catch(e) {
-    showToast('Multi-round push error: ' + e.message, 'error');
-  } finally {
-    // Re-enable button
-    btn.disabled = false;
-    btn.textContent = 'Start Multi-Round Push';
-  }
-};
 
 // Basic motion control
 document.getElementById('btnHome').onclick = () => 
@@ -557,16 +553,19 @@ document.querySelectorAll('[data-jog]').forEach(b => b.onclick = () => {
 });
 
 // Emergency stop
-document.getElementById('btnEstop').onclick = async () => {
-  if (confirm('EMERGENCY STOP - Are you sure?')) {
-    try {
-      await postJSON('/api/estop');
-      showToast('EMERGENCY STOP activated!', 'error');
-    } catch(e) {
-      showToast('E-Stop error: ' + e.message, 'error');
+const estopBtn = document.getElementById('btnEstop');
+if (estopBtn) {
+  estopBtn.onclick = async () => {
+    if (confirm('EMERGENCY STOP - Are you sure?')) {
+      try {
+        await postJSON('/api/estop');
+        showToast('EMERGENCY STOP activated!', 'error');
+      } catch(e) {
+        showToast('E-Stop error: ' + e.message, 'error');
+      }
     }
-  }
-};
+  };
+}
 
 // Log management
 document.getElementById('btnRefreshLog').onclick = async () => {
@@ -585,19 +584,425 @@ setInterval(() => {
   document.getElementById('btnRefreshLog').click();
 }, 2000);
 
+// ── Coordinate Sequence ────────────────────────────────────────────────────────
+let coordinates = [];
+
+function renderCoordList() {
+  const container = document.getElementById('coordList');
+  container.innerHTML = '';
+  coordinates.forEach((c, i) => {
+    const row = document.createElement('div');
+    row.className = 'd-flex gap-2 mb-1 align-items-center';
+    const zVal = c.z !== undefined ? c.z : '';
+    row.innerHTML = `
+      <span class="text-secondary" style="min-width:24px;font-size:0.75rem">${i+1}.</span>
+      <input type="number" class="form-control form-control-sm" style="width:80px"
+             value="${c.x}" step="1" onchange="updateCoord(${i},'x',this.value)">
+      <input type="number" class="form-control form-control-sm" style="width:80px"
+             value="${c.y}" step="1" onchange="updateCoord(${i},'y',this.value)">
+      <input type="number" class="form-control form-control-sm" style="width:80px"
+             placeholder="global" value="${zVal}" step="1" onchange="updateCoord(${i},'z',this.value)">
+      <button class="btn btn-sm btn-outline-light" onclick="removeCoord(${i})">×</button>
+    `;
+    container.appendChild(row);
+  });
+  renderBedMap();
+}
+
+function updateCoord(i, axis, val) {
+  const parsed = parseFloat(val);
+  if (axis === 'z') {
+    if (val === '' || isNaN(parsed)) {
+      delete coordinates[i].z;
+    } else {
+      coordinates[i].z = parsed;
+    }
+  } else {
+    coordinates[i][axis] = parsed || 0;
+  }
+}
+
+function removeCoord(i) {
+  coordinates.splice(i, 1);
+  renderCoordList();
+}
+
+document.getElementById('btnAddCoord').onclick = () => {
+  coordinates.push({x: 0, y: 0});
+  renderCoordList();
+};
+
+document.getElementById('btnClearCoords').onclick = () => {
+  coordinates = [];
+  renderCoordList();
+};
+
+// CSV upload
+document.getElementById('btnUploadCsv').onclick = () => {
+  document.getElementById('csvFileInput').click();
+};
+
+document.getElementById('csvFileInput').onchange = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const r = await fetch('/api/upload_csv', { method: 'POST', body: formData });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error);
+
+    coordinates = j.coordinates;
+    renderCoordList();
+
+    let msg = `Loaded ${coordinates.length} point(s) from ${file.name}`;
+    if (j.warnings && j.warnings.length > 0) {
+      msg += `\n\nWarnings:\n${j.warnings.join('\n')}`;
+    }
+    showToast(msg, 'success');
+  } catch(e) {
+    showToast('CSV upload error: ' + e.message, 'error');
+  }
+
+  // Reset input so same file can be re-uploaded
+  event.target.value = '';
+};
+
+// Sequence control
+let seqPollInterval = null;
+
+document.getElementById('btnStartSequence').onclick = async () => {
+  if (coordinates.length === 0) {
+    showToast('Add at least one coordinate first', 'error');
+    return;
+  }
+
+  const target_kg = parseFloat(document.getElementById('coordTargetForce').value);
+
+  try {
+    await postJSON('/api/force/push_coordinates', {
+      coordinates,
+      target_kg,
+      max_depth_mm: 150
+    });
+
+    document.getElementById('btnStartSequence').style.display = 'none';
+    document.getElementById('btnAbortSequence').style.display = 'block';
+    document.getElementById('seqProgress').style.display = 'block';
+
+    seqPollInterval = setInterval(pollSequenceStatus, 500);
+  } catch(e) {
+    showToast('Sequence error: ' + e.message, 'error');
+  }
+};
+
+document.getElementById('btnAbortSequence').onclick = async () => {
+  try {
+    await postJSON('/api/force/abort');
+    showToast('Abort requested...', 'info');
+  } catch(e) {
+    showToast('Abort error: ' + e.message, 'error');
+  }
+};
+
+async function pollSequenceStatus() {
+  try {
+    const s = await getJSON('/api/force/sequence_status');
+    const msg = s.message || 'Running...';
+    document.getElementById('seqMessage').textContent = msg;
+
+    const pct = s.total_coords > 0
+      ? Math.round((s.current_coord_index / s.total_coords) * 100)
+      : 0;
+    document.getElementById('seqPercent').textContent = pct + '%';
+    document.getElementById('seqProgressBar').style.width = pct + '%';
+
+    if (!s.running) {
+      clearInterval(seqPollInterval);
+      seqPollInterval = null;
+
+      document.getElementById('btnStartSequence').style.display = 'block';
+      document.getElementById('btnAbortSequence').style.display = 'none';
+
+      showToast(msg, msg.includes('Error') ? 'error' : 'success');
+
+      setTimeout(() => {
+        document.getElementById('seqProgress').style.display = 'none';
+      }, 5000);
+    }
+  } catch(e) {
+    console.error('Sequence poll error:', e);
+  }
+}
+
 // Initial status check
 async function refreshStatus(){
   try {
-    const printerStatus = await getJSON('/api/status');
-    setPrinterConnected(printerStatus.connected, printerStatus.port);
+    const s = await getJSON('/api/status');
+    setPrinterConnected(s.connected, s.port);
+    // ESP status is handled by its own polling interval
   } catch(e) {
     console.error('Status check failed:', e);
   }
 }
 
+// Always run force monitoring (drives the status dot automatically)
+startForceMonitoring();
+
+// ── ESP / IMU monitoring ──────────────────────────────────────────────────────
+let espMonitorInterval = null;
+
+function startEspMonitoring() {
+  if (espMonitorInterval) return;
+  espMonitorInterval = setInterval(async () => {
+    try {
+      const result = await getJSON('/api/esp/status');
+      const dot = document.querySelector('#espStatus .status-dot');
+      const txt = document.getElementById('espStatusText');
+      const portEl = document.getElementById('espPort');
+      const readingsEl = document.getElementById('imuReadings');
+      const recStatusEl = document.getElementById('imuRecStatus');
+      const dlBtn = document.getElementById('btnDownloadImuCsv');
+
+      if (result.connected) {
+        dot.className = 'status-dot status-connected';
+        txt.textContent = `Connected (${result.imu_count} IMUs)`;
+        portEl.textContent = result.port || '';
+
+        // Show latest IMU readings
+        let html = '';
+        for (const [imuNum, data] of Object.entries(result.imus)) {
+          html += `<div>IMU ${imuNum}: ax=${data.ax.toFixed(2)} ay=${data.ay.toFixed(2)} az=${data.az.toFixed(2)} | gx=${data.gx.toFixed(2)} gy=${data.gy.toFixed(2)} gz=${data.gz.toFixed(2)}</div>`;
+        }
+        readingsEl.innerHTML = html || '<span class="text-secondary">Waiting for data...</span>';
+      } else {
+        dot.className = 'status-dot status-disconnected';
+        txt.textContent = 'Disconnected';
+        portEl.textContent = '';
+        readingsEl.innerHTML = '<span class="text-secondary">No ESP connected</span>';
+      }
+
+      // Recording status
+      if (result.recording) {
+        recStatusEl.textContent = `Recording: ${result.record_count} rows`;
+        recStatusEl.style.color = '#28a745';
+      } else if (result.last_csv) {
+        recStatusEl.textContent = 'Last recording saved';
+        recStatusEl.style.color = '';
+        dlBtn.style.display = 'block';
+      } else {
+        recStatusEl.textContent = '';
+        dlBtn.style.display = 'none';
+      }
+    } catch(e) { /* ignore */ }
+  }, 1000);
+}
+
+document.getElementById('btnDownloadImuCsv').onclick = () => {
+  window.location.href = '/api/esp/download_csv';
+};
+
+startEspMonitoring();
+
+// Position monitoring
+setInterval(async () => {
+  try {
+    const p = await getJSON('/api/position');
+    if (p.ok) {
+      document.getElementById('posX').textContent = p.x.toFixed(1) + ' mm';
+      document.getElementById('posY').textContent = p.y.toFixed(1) + ' mm';
+      document.getElementById('posZ').textContent = p.z.toFixed(1) + ' mm';
+      renderBedMap();
+    }
+  } catch(e) { /* ignore */ }
+}, 1000);
+
+// ── Bed Map ───────────────────────────────────────────────────────────────────
+const BED_MAX_X = 105, BED_MAX_Y = 85;
+const BED_PL = 50, BED_PT = 40, BED_SCALE = 2;
+// Physical fixture grid: 150×100 mm (±75 X, ±50 Y), 3 cols × 2 rows of 50×50 mm
+const GRID_MAX_X = 75, GRID_MAX_Y = 50;
+
+function mmToSvg(mx, my) {
+  return [
+    BED_PL + (mx + BED_MAX_X) * BED_SCALE,
+    BED_PT + (BED_MAX_Y - my) * BED_SCALE
+  ];
+}
+
+function svgToMm(sx, sy) {
+  return [
+    Math.round((sx - BED_PL) / BED_SCALE - BED_MAX_X),
+    Math.round(BED_MAX_Y - (sy - BED_PT) / BED_SCALE)
+  ];
+}
+
+function getSvgPoint(svg, event) {
+  const pt = svg.createSVGPoint();
+  pt.x = event.clientX;
+  pt.y = event.clientY;
+  const sp = pt.matrixTransform(svg.getScreenCTM().inverse());
+  return [sp.x, sp.y];
+}
+
+function renderBedMap() {
+  const svg = document.getElementById('bedMap');
+  if (!svg) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs, text) {
+    const e = document.createElementNS(ns, tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  svg.innerHTML = '';
+  const [bx1, by1] = mmToSvg(-BED_MAX_X,  BED_MAX_Y);  // top-left
+  const [bx2, by2] = mmToSvg( BED_MAX_X, -BED_MAX_Y);  // bottom-right
+
+  // Background
+  svg.appendChild(el('rect', { x:0, y:0, width:500, height:430, fill:'#e9ecef' }));
+  // Full bed area (dotted border)
+  svg.appendChild(el('rect', { x:bx1, y:by1, width:bx2-bx1, height:by2-by1, fill:'#ffffff', stroke:'#adb5bd', 'stroke-width':'1.5', 'stroke-dasharray':'5,4' }));
+
+  // --- Physical fixture grid (150×100 mm, 3×2 cells) ---
+  const [gx1, gy1] = mmToSvg(-GRID_MAX_X,  GRID_MAX_Y);  // grid top-left
+  const [gx2, gy2] = mmToSvg( GRID_MAX_X, -GRID_MAX_Y);  // grid bottom-right
+  const cellW = (gx2 - gx1) / 3;
+  const cellH = (gy2 - gy1) / 2;
+
+  // Cell fills — same white as bed
+  for (let col = 0; col < 3; col++) {
+    for (let row = 0; row < 2; row++) {
+      svg.appendChild(el('rect', {
+        x: gx1 + col * cellW, y: gy1 + row * cellH,
+        width: cellW, height: cellH,
+        fill: '#ffffff', stroke: 'none'
+      }));
+    }
+  }
+
+  // Grid outer border (dotted, same style as inner lines)
+  svg.appendChild(el('rect', { x:gx1, y:gy1, width:gx2-gx1, height:gy2-gy1,
+    fill:'none', stroke:'#6c9bd6', 'stroke-width':'2', 'stroke-dasharray':'5,4' }));
+
+  // All grid lines span full bed (bx1→bx2, by1→by2)
+  // Vertical lines at X = -75, -25, +25, +75
+  for (const gxMm of [-75, -25, 25, 75]) {
+    const [sx] = mmToSvg(gxMm, 0);
+    svg.appendChild(el('line', { x1:sx, y1:by1, x2:sx, y2:by2,
+      stroke:'#6c9bd6', 'stroke-width':'1.5', 'stroke-dasharray':'5,4' }));
+  }
+  // Horizontal lines at Y = -50, 0, +50
+  // Horizontal lines at Y = -50, 0, +50
+  for (const gyMm of [-50, 0, 50]) {
+    const [, sy] = mmToSvg(0, gyMm);
+    svg.appendChild(el('line', { x1:bx1, y1:sy, x2:bx2, y2:sy,
+      stroke:'#6c9bd6', 'stroke-width':'1.5', 'stroke-dasharray':'5,4' }));
+  }
+
+  // X axis tick labels
+  for (const gxMm of [-105, -75, -25, 0, 25, 75, 105]) {
+    const [sx] = mmToSvg(gxMm, 0);
+    svg.appendChild(el('text', { x:sx, y:by2+14, 'text-anchor':'middle', 'font-size':'10', fill:'#6c757d' }, gxMm));
+  }
+  // Y axis tick labels
+  for (const gyMm of [-85, -50, 0, 50, 85]) {
+    const [, sy] = mmToSvg(0, gyMm);
+    svg.appendChild(el('text', { x:bx1-5, y:sy+4, 'text-anchor':'end', 'font-size':'10', fill:'#6c757d' }, gyMm));
+  }
+
+  // Axis labels
+  svg.appendChild(el('text', { x:(bx1+bx2)/2, y:425, 'text-anchor':'middle', 'font-size':'11', fill:'#6c757d', 'font-weight':'600' }, 'X (mm)'));
+  const midY = (by1 + by2) / 2;
+  svg.appendChild(el('text', { x:12, y:midY, 'text-anchor':'middle', 'font-size':'11', fill:'#6c757d', 'font-weight':'600', transform:`rotate(-90,12,${midY})` }, 'Y (mm)'));
+
+  // Centre pin
+  const [cx0, cy0] = mmToSvg(0, 0);
+  svg.appendChild(el('circle', { cx:cx0, cy:cy0, r:'5', fill:'none', stroke:'#adb5bd', 'stroke-width':'1.5' }));
+  svg.appendChild(el('circle', { cx:cx0, cy:cy0, r:'2', fill:'#adb5bd' }));
+
+  // Coordinate points
+  coordinates.forEach((c, i) => {
+    const [px, py] = mmToSvg(c.x, c.y);
+    const g = el('g', { style:'cursor:pointer' });
+    g.appendChild(el('circle', { cx:px, cy:py, r:'9', fill:'#007bff', stroke:'white', 'stroke-width':'1.5' }));
+    g.appendChild(el('text', { x:px, y:py+1, 'text-anchor':'middle', 'dominant-baseline':'middle', 'font-size':'9', fill:'white', 'font-weight':'700', 'pointer-events':'none' }, i+1));
+    svg.appendChild(g);
+  });
+
+  // Printer head position (orange crosshair)
+  const hxMm = parseFloat(document.getElementById('posX').textContent);
+  const hyMm = parseFloat(document.getElementById('posY').textContent);
+  if (!isNaN(hxMm) && !isNaN(hyMm)) {
+    const [hsx, hsy] = mmToSvg(hxMm, hyMm);
+    if (hsx >= bx1 && hsx <= bx2 && hsy >= by1 && hsy <= by2) {
+      svg.appendChild(el('circle', { cx:hsx, cy:hsy, r:'7',  fill:'none', stroke:'#fd7e14', 'stroke-width':'2' }));
+      svg.appendChild(el('line',   { x1:hsx-12, y1:hsy,  x2:hsx+12, y2:hsy,  stroke:'#fd7e14', 'stroke-width':'2' }));
+      svg.appendChild(el('line',   { x1:hsx,    y1:hsy-12, x2:hsx,   y2:hsy+12, stroke:'#fd7e14', 'stroke-width':'2' }));
+    }
+  }
+}
+
+// Bed map click / right-click handlers
+const bedMapEl = document.getElementById('bedMap');
+
+bedMapEl.addEventListener('click', (e) => {
+  const [sx, sy] = getSvgPoint(bedMapEl, e);
+  const [mx, my] = svgToMm(sx, sy);
+  if (mx < -BED_MAX_X || mx > BED_MAX_X || my < -BED_MAX_Y || my > BED_MAX_Y) return;
+  coordinates.push({ x: mx, y: my });
+  renderCoordList();
+});
+
+bedMapEl.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  const [sx, sy] = getSvgPoint(bedMapEl, e);
+  let nearest = -1, nearDist = 15;
+  coordinates.forEach((c, i) => {
+    const [px, py] = mmToSvg(c.x, c.y);
+    const d = Math.hypot(sx - px, sy - py);
+    if (d < nearDist) { nearDist = d; nearest = i; }
+  });
+  if (nearest >= 0) { coordinates.splice(nearest, 1); renderCoordList(); }
+});
+
+bedMapEl.addEventListener('mousemove', (e) => {
+  const [sx, sy] = getSvgPoint(bedMapEl, e);
+  const [mx, my] = svgToMm(sx, sy);
+  const curEl = document.getElementById('bedMapCursor');
+  if (mx >= -BED_MAX_X && mx <= BED_MAX_X && my >= -BED_MAX_Y && my <= BED_MAX_Y) {
+    curEl.textContent = `X: ${mx} mm,  Y: ${my} mm`;
+  } else {
+    curEl.textContent = '';
+  }
+});
+
+bedMapEl.addEventListener('mouseleave', () => {
+  document.getElementById('bedMapCursor').textContent = '';
+});
+
+// Download CSV
+document.getElementById('btnDownloadCsv').onclick = () => {
+  if (coordinates.length === 0) { showToast('No points to download', 'error'); return; }
+  const hasZ = coordinates.some(c => c.z !== undefined);
+  const header = hasZ ? 'x,y,z' : 'x,y';
+  const rows = coordinates.map(c =>
+    hasZ ? `${c.x},${c.y},${c.z !== undefined ? c.z : ''}` : `${c.x},${c.y}`
+  );
+  const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), { href: url, download: 'coordinates.csv' });
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`Downloaded ${coordinates.length} point(s)`, 'success');
+};
+
 // Initialize
 refreshStatus();
 document.getElementById('btnRefreshLog').click();
+renderBedMap();
 </script>
 </body>
 </html>

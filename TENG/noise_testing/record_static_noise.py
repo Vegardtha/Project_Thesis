@@ -128,7 +128,8 @@ def main():
     
     # Save to CSV
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "recordings")
+    os.makedirs(output_dir, exist_ok=True)
     filename = f"static_noise_{timestamp}.csv"
     filepath = os.path.join(output_dir, filename)
     
