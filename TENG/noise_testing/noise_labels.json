@@ -1,0 +1,278 @@
+{
+  "static_noise_20260309_152756.csv": {
+    "label": "base",
+    "note": ""
+  },
+  "static_noise_20260309_152744.csv": {
+    "label": "base",
+    "note": ""
+  },
+  "static_noise_20260309_152840.csv": {
+    "label": "10",
+    "note": ""
+  },
+  "static_noise_20260309_152829.csv": {
+    "label": "10cm",
+    "note": ""
+  },
+  "static_noise_20260309_152927.csv": {
+    "label": "20",
+    "note": ""
+  },
+  "static_noise_20260309_152914.csv": {
+    "label": "20",
+    "note": ""
+  },
+  "static_noise_20260309_153043.csv": {
+    "label": "30",
+    "note": ""
+  },
+  "static_noise_20260309_153031.csv": {
+    "label": "30",
+    "note": ""
+  },
+  "static_noise_20260309_153132.csv": {
+    "label": "40",
+    "note": ""
+  },
+  "static_noise_20260309_153118.csv": {
+    "label": "40",
+    "note": ""
+  },
+  "static_noise_20260309_153219.csv": {
+    "label": "50",
+    "note": ""
+  },
+  "static_noise_20260309_153206.csv": {
+    "label": "50",
+    "note": ""
+  },
+  "static_noise_20260309_153831.csv": {
+    "label": "base",
+    "note": ""
+  },
+  "static_noise_20260309_153818.csv": {
+    "label": "base",
+    "note": ""
+  },
+  "static_noise_20260309_153726.csv": {
+    "label": "10",
+    "note": ""
+  },
+  "static_noise_20260309_153717.csv": {
+    "label": "10",
+    "note": ""
+  },
+  "static_noise_20260309_153650.csv": {
+    "label": "base",
+    "note": ""
+  },
+  "static_noise_20260309_153640.csv": {
+    "label": "base",
+    "note": ""
+  },
+  "static_noise_20260309_153615.csv": {
+    "label": "10",
+    "note": ""
+  },
+  "static_noise_20260309_153550.csv": {
+    "label": "10",
+    "note": ""
+  },
+  "static_noise_20260309_153523.csv": {
+    "label": "base",
+    "note": ""
+  },
+  "static_noise_20260309_153510.csv": {
+    "label": "base",
+    "note": ""
+  },
+  "static_noise_20260309_181000.csv": {
+    "label": "0",
+    "note": ""
+  },
+  "static_noise_20260309_180947.csv": {
+    "label": "0",
+    "note": ""
+  },
+  "static_noise_20260309_180935.csv": {
+    "label": "base",
+    "note": ""
+  },
+  "static_noise_20260309_180920.csv": {
+    "label": "base",
+    "note": ""
+  },
+  "static_noise_20260309_181129.csv": {
+    "label": "10",
+    "note": ""
+  },
+  "static_noise_20260309_181157.csv": {
+    "label": "10",
+    "note": ""
+  },
+  "static_noise_20260309_181302.csv": {
+    "label": "20",
+    "note": ""
+  },
+  "static_noise_20260309_181314.csv": {
+    "label": "20",
+    "note": ""
+  },
+  "static_noise_20260309_181625.csv": {
+    "label": "bASE",
+    "note": ""
+  },
+  "static_noise_20260309_181637.csv": {
+    "label": "base",
+    "note": ""
+  },
+  "static_noise_20260309_181650.csv": {
+    "label": "3",
+    "note": ""
+  },
+  "static_noise_20260309_181706.csv": {
+    "label": "3",
+    "note": ""
+  },
+  "static_noise_20260309_181755.csv": {
+    "label": "10",
+    "note": ""
+  },
+  "static_noise_20260309_181808.csv": {
+    "label": "10",
+    "note": ""
+  },
+  "static_noise_20260309_182034.csv": {
+    "label": "20av",
+    "note": ""
+  },
+  "static_noise_20260309_182007.csv": {
+    "label": "20av",
+    "note": ""
+  },
+  "static_noise_20260309_182056.csv": {
+    "label": "20po",
+    "note": ""
+  },
+  "static_noise_20260309_182141.csv": {
+    "label": "20po",
+    "note": ""
+  },
+  "static_noise_20260309_182257.csv": {
+    "label": "10av",
+    "note": ""
+  },
+  "static_noise_20260309_182310.csv": {
+    "label": "10po",
+    "note": ""
+  },
+  "static_noise_20260309_182328.csv": {
+    "label": "10av",
+    "note": ""
+  },
+  "static_noise_20260309_182344.csv": {
+    "label": "10po",
+    "note": ""
+  },
+  "static_noise_20260309_182521.csv": {
+    "label": "6av",
+    "note": ""
+  },
+  "static_noise_20260309_182535.csv": {
+    "label": "6po",
+    "note": ""
+  },
+  "static_noise_20260309_182704.csv": {
+    "label": "6av",
+    "note": ""
+  },
+  "static_noise_20260309_182620.csv": {
+    "label": "6po",
+    "note": ""
+  },
+  "static_noise_20260309_182826.csv": {
+    "label": "1av",
+    "note": ""
+  },
+  "static_noise_20260309_182841.csv": {
+    "label": "1po",
+    "note": ""
+  },
+  "static_noise_20260309_182859.csv": {
+    "label": "1av",
+    "note": ""
+  },
+  "static_noise_20260309_182918.csv": {
+    "label": "1po",
+    "note": ""
+  },
+  "static_noise_filtered_20260309_183045.csv": {
+    "label": "1",
+    "note": ""
+  },
+  "static_noise_filtered_20260309_183121.csv": {
+    "label": "10",
+    "note": ""
+  },
+  "static_noise_filtered_20260309_183148.csv": {
+    "label": "20",
+    "note": ""
+  },
+  "static_noise_filtered_20260309_183215.csv": {
+    "label": "30",
+    "note": ""
+  },
+  "static_noise_filtered_20260309_183430.csv": {
+    "label": "av",
+    "note": ""
+  },
+  "static_noise_filtered_20260309_183514.csv": {
+    "label": "10",
+    "note": ""
+  },
+  "static_noise_filtered_20260309_183538.csv": {
+    "label": "9",
+    "note": ""
+  },
+  "static_noise_filtered_20260309_183559.csv": {
+    "label": "8",
+    "note": ""
+  },
+  "static_noise_filtered_20260309_183618.csv": {
+    "label": "7",
+    "note": ""
+  },
+  "static_noise_filtered_20260309_183640.csv": {
+    "label": "6",
+    "note": ""
+  },
+  "static_noise_filtered_20260309_183658.csv": {
+    "label": "5",
+    "note": ""
+  },
+  "static_noise_filtered_20260309_183719.csv": {
+    "label": "4",
+    "note": ""
+  },
+  "static_noise_filtered_20260309_183739.csv": {
+    "label": "3",
+    "note": ""
+  },
+  "static_noise_filtered_20260309_183801.csv": {
+    "label": "2",
+    "note": ""
+  },
+  "static_noise_filtered_20260309_184126.csv": {
+    "label": "arduinoav",
+    "note": ""
+  },
+  "static_noise_filtered_20260309_184105.csv": {
+    "label": "motordiverav",
+    "note": ""
+  },
+  "static_noise_filtered_20260309_184047.csv": {
+    "label": "altpo",
+    "note": ""
+  }
+}
