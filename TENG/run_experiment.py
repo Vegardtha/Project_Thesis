@@ -3,7 +3,7 @@ TENG Experiment Runner - SIMPLE VERSION
 Just configure your experiment settings and run!
 """
 
-from utils import TENGExperiment, ExperimentConfig, OscilloscopeConfig
+from utils import TENGExperiment, ExperimentConfig, OscilloscopeConfig, ArduinoConfig
 
 
 # ============================================================================
@@ -13,18 +13,24 @@ from utils import TENGExperiment, ExperimentConfig, OscilloscopeConfig
 def main():
     # Configure your experiment
     config = ExperimentConfig(
-        name="LongBeltTest",
+        name="Finalrevtest",
         description="TENG impact testing",
-        num_acquisitions=2,  # How many data acquisitions to record
+        num_acquisitions=5,  # How many data acquisitions to record
         
         oscilloscope=OscilloscopeConfig(
             sampling_frequency=500e3,   # 0.5 MHz
-            acquisition_time_ms=15,     # 30 ms buffer (max recording window)
+            acquisition_time_ms=30,     # 30 ms buffer (max recording window)
             amplitude_range=50,         # ±25V (Range is peak-to-peak)
-            trigger_level=0.5,          # Start recording at 0.5V
+            trigger_level=0.3,          # Start recording at 0.5V
             channel=0                   # Oscilloscope channel (0=Ch1, 1=Ch2)
         ),
-        
+
+         #Uncomment to enable Arduino integration (position + force per acquisition):
+         arduino=ArduinoConfig(
+             port="COM3",            # Change to your Arduino's port
+             impact_wait_s=6.0,      # Seconds to wait for IMPACT message
+         ),
+
         save_plots=True
     )
     

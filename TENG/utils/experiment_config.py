@@ -9,6 +9,15 @@ import os
 
 
 @dataclass
+class ArduinoConfig:
+    """Arduino motor controller configuration"""
+    port: str = "COM3"          # Serial port (e.g. COM3 on Windows, /dev/ttyUSB0 on Linux)
+    baud_rate: int = 115200
+    timeout: float = 1.0        # Serial read timeout (s)
+    impact_wait_s: float = 6.0  # Max seconds to wait for IMPACT message after acquisition
+
+
+@dataclass
 class OscilloscopeConfig:
     """Oscilloscope configuration"""
     # Acquisition settings
@@ -36,13 +45,13 @@ class ExperimentConfig:
     
     # Hardware configurations
     oscilloscope: OscilloscopeConfig = None
-    
+    arduino: ArduinoConfig = None   # Set to ArduinoConfig(...) to enable Arduino integration
+
     # Data output
     output_dir: str = "experiments"
     save_plots: bool = True
     
     def __post_init__(self):
-        """Initialize sub-configurations if not provided"""
         if self.oscilloscope is None:
             self.oscilloscope = OscilloscopeConfig()
     
@@ -88,7 +97,15 @@ class ExperimentConfig:
             f.write(f"Trigger Channel: {self.oscilloscope.trigger_channel + 1}\n")
             f.write(f"Trigger Level: {self.oscilloscope.trigger_level} V\n")
             f.write(f"Trigger Edge: {self.oscilloscope.trigger_edge}\n\n")
-            
+
+            if self.arduino is not None:
+                f.write("-"*70 + "\n")
+                f.write("ARDUINO SETTINGS\n")
+                f.write("-"*70 + "\n")
+                f.write(f"Port: {self.arduino.port}\n")
+                f.write(f"Baud Rate: {self.arduino.baud_rate}\n")
+                f.write(f"Impact Wait Timeout: {self.arduino.impact_wait_s} s\n\n")
+
             f.write("-"*70 + "\n")
             f.write("DATA OUTPUT\n")
             f.write("-"*70 + "\n")

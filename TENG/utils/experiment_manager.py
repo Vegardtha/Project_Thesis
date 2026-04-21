@@ -18,24 +18,32 @@ class TENGExperiment:
     """
     Manages TENG data acquisition with triggered oscilloscope recording
     """
-    
+
     def __init__(self, config):
-        """Initialize experiment with configuration"""
         self.config = config
         self.oscilloscope = None
+        self.arduino_reader = None
         self.output_dir = None
         self.results = []
         
     def setup(self):
         """Initialize hardware connections and create output directory"""
-        
+
         # Create output directory
         self.output_dir = self.config.get_output_directory()
         print(f"Output directory: {self.output_dir}")
-        
+
         # Save configuration
         self.config.save_config_to_file(self.output_dir)
-        
+
+        # Connect Arduino if configured
+        if self.config.arduino is not None:
+            from .arduino_reader import ArduinoReader
+            self.arduino_reader = ArduinoReader(self.config.arduino)
+            if not self.arduino_reader.connect():
+                print("  ⚠ Arduino unavailable — continuing without position/force data")
+                self.arduino_reader = None
+
         # Initialize oscilloscope
         self.oscilloscope = OscilloscopeController()
         self.oscilloscope.connect()
@@ -67,24 +75,28 @@ class TENGExperiment:
     def acquire_single(self, acquisition_num):
         """Perform a single triggered data acquisition"""
         print(f"\nAcquisition {acquisition_num}/{self.config.num_acquisitions} - Waiting for trigger...")
-        
+
+        # Clear any stale IMPACT message from a previous cycle
+        if self.arduino_reader:
+            self.arduino_reader.pop_latest_impact()
+
         # Start acquisition in triggered mode - will wait for trigger event
-        self.oscilloscope.dwf.FDwfAnalogInConfigure(self.oscilloscope.device_handle, 
-                                                     ctypes.c_bool(False), 
+        self.oscilloscope.dwf.FDwfAnalogInConfigure(self.oscilloscope.device_handle,
+                                                     ctypes.c_bool(False),
                                                      ctypes.c_bool(True))
-        
-        # Set DIO 1 HIGH (trigger signal)
-        self.oscilloscope.dwf.FDwfDigitalIOOutputSet(self.oscilloscope.device_handle, 
+
+        # Set DIO 1 HIGH (trigger signal to Arduino pin 3)
+        self.oscilloscope.dwf.FDwfDigitalIOOutputSet(self.oscilloscope.device_handle,
                                                       ctypes.c_int(0b00000010))
-        
-        # Wait for acquisition to complete
+
+        # Wait for oscilloscope acquisition to complete
         sts = ctypes.c_byte()
-        timeout = 30  # 30 second timeout
+        timeout = 30
         start_time = time.time()
-        
+
         while True:
-            self.oscilloscope.dwf.FDwfAnalogInStatus(self.oscilloscope.device_handle, 
-                                                      ctypes.c_bool(True), 
+            self.oscilloscope.dwf.FDwfAnalogInStatus(self.oscilloscope.device_handle,
+                                                      ctypes.c_bool(True),
                                                       ctypes.byref(sts))
             if sts.value == 2:  # DwfStateDone
                 break
@@ -92,47 +104,65 @@ class TENGExperiment:
                 print(f"  ⚠ Timeout waiting for trigger!")
                 return None
             time.sleep(0.01)
-        
+
         # Retrieve data
         data_buffer = (ctypes.c_double * self.num_samples)()
-        self.oscilloscope.dwf.FDwfAnalogInStatusData(self.oscilloscope.device_handle, 
-                                                       self.config.oscilloscope.channel, 
-                                                       data_buffer, 
+        self.oscilloscope.dwf.FDwfAnalogInStatusData(self.oscilloscope.device_handle,
+                                                       self.config.oscilloscope.channel,
+                                                       data_buffer,
                                                        self.num_samples)
         voltage_data = np.array(data_buffer)
-        
+
         # Set DIO 1 LOW
-        self.oscilloscope.dwf.FDwfDigitalIOOutputSet(self.oscilloscope.device_handle, 
+        self.oscilloscope.dwf.FDwfDigitalIOOutputSet(self.oscilloscope.device_handle,
                                                       ctypes.c_int(0b00000000))
-        
+
+        # Wait for Arduino IMPACT message (arrives after motor cycle completes)
+        position_cm = 0.0
+        peak_force_g = 0.0
+        if self.arduino_reader:
+            deadline = time.time() + self.config.arduino.impact_wait_s
+            while time.time() < deadline:
+                impact = self.arduino_reader.pop_latest_impact()
+                if impact:
+                    position_cm = impact.position_cm
+                    peak_force_g = impact.peak_g
+                    break
+                time.sleep(0.1)
+            else:
+                print("  ⚠ No IMPACT message received from Arduino")
+
         # Create timestamp array
         timestamp = self.oscilloscope.create_timestamp_array(
             self.num_samples,
             self.config.oscilloscope.sampling_frequency
         )
-        
-        # Create DataFrame
+
         df = pd.DataFrame({
             'Timestamp_ms': timestamp,
             'Voltage_V': voltage_data
         })
-        
-        # Calculate peak voltage
+
         peak_voltage = np.max(np.abs(voltage_data))
-        
-        # Save data
+
         csv_path = f"{self.output_dir}/acquisition_{acquisition_num:04d}.csv"
         df.to_csv(csv_path, index=False)
-        print(f"✓ Peak: {peak_voltage:.2f} V - Saved: acquisition_{acquisition_num:04d}.csv")
-        
-        # Store result
+
+        if self.arduino_reader:
+            print(f"✓ Peak: {peak_voltage:.2f} V | Pos: {position_cm:.2f} cm | Force: {peak_force_g:.1f} g"
+                  f" - Saved: acquisition_{acquisition_num:04d}.csv")
+        else:
+            print(f"✓ Peak: {peak_voltage:.2f} V - Saved: acquisition_{acquisition_num:04d}.csv")
+
         self.results.append({
             'acquisition': acquisition_num,
             'timestamp': datetime.now(),
             'peak_voltage': peak_voltage,
+            'position_cm': position_cm,
+            'peak_force_g': peak_force_g,
             'data': df
         })
-            
+
         return df
     
     def run(self):
@@ -174,11 +204,14 @@ class TENGExperiment:
         # Extract statistics
         acquisitions = [r['acquisition'] for r in self.results]
         peak_voltages = [r['peak_voltage'] for r in self.results]
-        
-        # Summary statistics
+        positions = [r['position_cm'] for r in self.results]
+        forces = [r['peak_force_g'] for r in self.results]
+
         summary_df = pd.DataFrame({
             'Acquisition': acquisitions,
-            'Peak_Voltage_V': peak_voltages
+            'Peak_Voltage_V': peak_voltages,
+            'Position_cm': positions,
+            'Peak_Force_g': forces,
         })
         
         summary_path = f"{self.output_dir}/experiment_summary.csv"
@@ -254,6 +287,8 @@ class TENGExperiment:
     
     def cleanup(self):
         """Disconnect hardware"""
+        if self.arduino_reader:
+            self.arduino_reader.disconnect()
         if self.oscilloscope:
             self.oscilloscope.disconnect()
             
